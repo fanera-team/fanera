@@ -5,7 +5,15 @@
     "dev": "pnpm --filter web dev",
     "build": "pnpm --filter web build",
     "lint": "pnpm --filter web lint",
-    "format": "pnpm --filter web format"
+    "lint:fix": "pnpm --filter web lint:fix",
+    "format": "pnpm --filter web format",
+    "format:check": "pnpm --filter web format:check",
+    "typecheck": "pnpm --filter web typecheck",
+    "prepare": "husky"
   },
-  "packageManager": "pnpm@12.18.0"
+  "packageManager": "pnpm@12.18.0",
+  "devDependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^17.6.0"
+  }
 }

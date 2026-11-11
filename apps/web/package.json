@@ -6,7 +6,11 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "lint:fix": "eslint . --cache --fix --max-warnings=0",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "next": "16.4.5",
@@ -20,7 +24,20 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.4.5",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-import-resolver-typescript": "^4.4.5",
+    "eslint-plugin-boundaries": "^7.4.2",
+    "prettier": "^3.9.10",
     "tailwindcss": "^4",
     "typescript": "catalog:default"
+  },
+  "lint-staged": {
+    "*.{js,mjs,cjs,ts,tsx}": [
+      "pnpm exec eslint --fix --max-warnings=0",
+      "pnpm exec prettier --write"
+    ],
+    "*.{json,css,md,yml,yaml}": [
+      "pnpm exec prettier --write"
+    ]
   }
 }
