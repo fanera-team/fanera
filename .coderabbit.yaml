@@ -24,6 +24,8 @@ reviews:
     - "!**/.next/**"
     - "!**/coverage/**"
     - "!**/*.generated.ts"
+    - "!**/generated/**"            # Prisma-клиент, клиенты из Swagger и т. п.
+    - "!**/next-env.d.ts"           # генерирует Next.js
     - "!**/__snapshots__/**"
 
   path_instructions:
@@ -39,6 +41,8 @@ reviews:
         Next.js + TypeScript, Feature-Sliced Design. Проверяй:
         - импорты только сверху вниз по слоям (app → pages → widgets → features → entities → shared);
         - импорт из слайса только через его public API (index.ts);
+        - не использовать `any`; если тип неизвестен — `unknown` с сужением типа,
+          а если без `any` никак — комментарий с причиной;
         - данные с сервера — TanStack Query, UI-состояние — Zustand, не смешивать;
         - формы — React Hook Form + Zod;
         - перемещение курсоров и частые события холста не должны вызывать ререндер всего дерева;
