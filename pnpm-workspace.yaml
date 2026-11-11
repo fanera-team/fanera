@@ -1,0 +1,8 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+allowBuilds:
+  sharp: true
+  unrs-resolver: true
+catalog:
+  typescript: ~6.0.3
