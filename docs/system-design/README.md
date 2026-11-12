@@ -20,6 +20,7 @@
 | [deep-dive.md](deep-dive.md) | глубокое погружение: совместное редактирование, undo/история, реконнект, права в WS, идемпотентность, ИИ, отказы, observability, жизненный цикл сущностей |
 | [glossary.md](glossary.md) | имена сущностей в коде (общие для фронта и бэка) + словарь терминов с аналогиями из фронтенда |
 | [scripts/render.sh](scripts/render.sh) | перегенерировать все SVG из `.puml` (нужен PlantUML: `brew install plantuml`) |
+| [scripts/check.mjs](scripts/check.mjs) | проверка согласованности: зависимости в backlog, ссылки на AC и Р-NN, ссылки и якоря, свежесть SVG. Запускается в CI |
 
 **Для работы в команде:**
 
@@ -31,6 +32,19 @@
 | [backlog.md](backlog.md) | задачи по вехам: кто, размер, зависимости, критерии готовности |
 
 **Как читать, если бэкенд пока в новинку:** [onboarding.md](onboarding.md) → [простые схемы 01–03](sequences/README.md) → этот README (разделы 0–3 и 7) → [architecture/README.md](architecture/README.md) (как данные ходят по системе) → [deep-dive.md](deep-dive.md) §1–4 (сердце проекта) → остальное по мере надобности. Незнакомое слово ищи в [glossary.md](glossary.md).
+
+**Как менять документацию, чтобы она не расходилась.** У каждого факта одно место, где он записан, остальные документы ссылаются туда и не пересказывают шаги и цифры:
+
+| Что | Где записано |
+|---|---|
+| решение, его причина, числа и сроки | [decisions.md](decisions.md) (Р-NN) |
+| REST: пути, поля, коды, cookie | [api/rest_api.yml](api/rest_api.yml) |
+| события сокета, ack, лимиты сообщений | [api/websocket.md](api/websocket.md) |
+| модель элемента и правила проверки | [database/README.md §2](database/README.md#2-модель-документа-доски-внутри-yjs) + [deep-dive §17](deep-dive.md#17-проверка-содержимого-правок-и-версии-клиента); позже — zod-схема в `contracts` |
+| кто что может | таблица в [onboarding §5](onboarding.md#5-роли-и-права) |
+| пошаговый алгоритм (восстановление, компакция, загрузка) | [deep-dive.md](deep-dive.md); схемы и architecture — упрощённо и со ссылкой |
+
+Перед PR: `bash docs/system-design/scripts/render.sh`, если менял `.puml`, и `node docs/system-design/scripts/check.mjs`. Вопросы к дизайну, которые легко пропустить, — в [шаблоне PR](../../.github/pull_request_template.md).
 
 ---
 
