@@ -1,0 +1,17 @@
+name: Backend CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  backend-placeholder:
+    name: Backend placeholder (no checks)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Hello World
+        run: echo "Hello World — backend is not merged into main yet; no backend checks ran."
