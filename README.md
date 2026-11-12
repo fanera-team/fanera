@@ -11,17 +11,21 @@
 
 ```bash
 pnpm install
+cp apps/server/.env.example apps/server/.env
 ```
 
 ## Запуск
 
 ```bash
-pnpm --filter web dev
+pnpm dev          # оба приложения сразу
+pnpm dev:web      # только Next.js, http://localhost:3000
+pnpm dev:server   # только NestJS API, http://localhost:3001/api
 ```
 
-Приложение откроется на http://localhost:3000
+Проверки по всем приложениям: `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build`, `pnpm format`.
 
 ## Структура
 
-- `apps/web` — Next.js приложение (TypeScript, App Router, Tailwind)
-- `packages/*` — общие библиотеки (пока пусто)
+- `apps/web` — фронтенд: Next.js (TypeScript, App Router, Tailwind)
+- `apps/server` — API: NestJS 12 (ESM, Express, Zod, Vitest) — подробности в [apps/server/README.md](apps/server/README.md)
+- `packages/*` — общий код фронта и бэка (пока пусто)
