@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<'/'>) {
 	return (
-		<html lang="en" className={cn('h-full', 'antialiased', 'font-sans', inter.variable)}>
+		<html lang="en" suppressHydrationWarning className={cn('h-full', 'antialiased', inter.variable)}>
 			<body className="min-h-full flex flex-col">
 				<Providers>{children}</Providers>
 			</body>

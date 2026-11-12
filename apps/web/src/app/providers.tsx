@@ -2,7 +2,7 @@
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
-import { ThemeProvider as NextThemesProvider } from 'next-themes';
+import { ThemeProvider } from 'next-themes';
 import { useState } from 'react';
 
 export default function Providers({ children }: { children: React.ReactNode }) {
@@ -25,8 +25,4 @@ export default function Providers({ children }: { children: React.ReactNode }) {
 			</QueryClientProvider>
 		</ThemeProvider>
 	);
-}
-
-export function ThemeProvider(props: React.ComponentProps<typeof NextThemesProvider>) {
-	return <NextThemesProvider {...props} />;
 }
