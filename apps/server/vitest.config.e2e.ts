@@ -6,5 +6,7 @@ export default defineConfig({
     globals: true,
     root: './',
     include: ['**/*.e2e-spec.ts'],
+    // Переменные процесса важнее .env — тесты не зависят от локальных настроек
+    env: { WEB_ORIGIN: 'http://localhost:3000' },
   },
 });

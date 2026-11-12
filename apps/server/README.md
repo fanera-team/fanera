@@ -7,7 +7,7 @@ API Fanera на NestJS 12 (ESM, Express, Zod, Vitest).
 ```bash
 cp .env.example .env
 pnpm dev                # из корня: pnpm dev:server
-# -> http://localhost:3001/api/health
+# -> http://localhost:3001/health
 ```
 
 Проверки: `pnpm lint`, `pnpm typecheck`, `pnpm test` (unit), `pnpm test:e2e` (e2e запускаются отдельно).

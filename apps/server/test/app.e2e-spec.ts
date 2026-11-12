@@ -22,17 +22,15 @@ describe('App (e2e)', () => {
     await app.close();
   });
 
-  it('GET /api/health -> 200', async () => {
-    const res = await request(app.getHttpServer())
-      .get('/api/health')
-      .expect(200);
+  it('GET /health -> 200', async () => {
+    const res = await request(app.getHttpServer()).get('/health').expect(200);
 
     expect(res.body.status).toBe('ok');
   });
 
   it('CORS: разрешает origin фронта', async () => {
     const res = await request(app.getHttpServer())
-      .get('/api/health')
+      .get('/health')
       .set('Origin', 'http://localhost:3000');
 
     expect(res.headers['access-control-allow-origin']).toBe(
@@ -42,7 +40,7 @@ describe('App (e2e)', () => {
 
   it('CORS: не разрешает чужой origin', async () => {
     const res = await request(app.getHttpServer())
-      .get('/api/health')
+      .get('/health')
       .set('Origin', 'https://evil.example');
 
     expect(res.headers['access-control-allow-origin']).toBeUndefined();

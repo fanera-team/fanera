@@ -9,7 +9,7 @@ import type { Env } from './config/env.schema.js';
 export function configureApp(app: INestApplication): void {
   const config = app.get<ConfigService<Env, true>>(ConfigService);
 
-  app.setGlobalPrefix('api');
+  app.setGlobalPrefix('api', { exclude: ['health'] });
 
   // Безопасные HTTP-заголовки
   app.use(helmet());

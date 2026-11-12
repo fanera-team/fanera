@@ -19,7 +19,7 @@ async function bootstrap() {
 
   await app.listen(port);
 
-  Logger.log(`http://localhost:${port}/api/health`, 'Bootstrap');
+  Logger.log(`http://localhost:${port}/health`, 'Bootstrap');
 }
 
 await bootstrap();
