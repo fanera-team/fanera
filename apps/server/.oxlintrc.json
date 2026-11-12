@@ -1,0 +1,37 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "unicorn", "oxc", "import"],
+  "env": { "node": true },
+  "categories": { "correctness": "error" },
+  "rules": {
+    "typescript/no-misused-promises": "error",
+    "typescript/only-throw-error": "error",
+    "typescript/return-await": "error",
+    "typescript/switch-exhaustiveness-check": "error",
+    "import/no-cycle": "error",
+    "eslint/no-console": "error",
+    "eslint/eqeqeq": "error",
+
+    "typescript/no-explicit-any": "warn",
+    "typescript/no-unsafe-assignment": "warn",
+    "typescript/no-unsafe-member-access": "warn",
+    "typescript/no-unsafe-call": "warn",
+    "typescript/no-unsafe-return": "warn",
+    "typescript/no-unsafe-argument": "warn",
+    "typescript/no-non-null-assertion": "warn",
+    "typescript/prefer-nullish-coalescing": "warn"
+  },
+  "overrides": [
+    {
+      "files": ["test/**/*.ts", "**/*.spec.ts"],
+      "rules": {
+        "typescript/no-explicit-any": "off",
+        "typescript/no-unsafe-assignment": "off",
+        "typescript/no-unsafe-member-access": "off",
+        "typescript/no-unsafe-call": "off",
+        "typescript/no-unsafe-return": "off",
+        "typescript/no-unsafe-argument": "off"
+      }
+    }
+  ]
+}
