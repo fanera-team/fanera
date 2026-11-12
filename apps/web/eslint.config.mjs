@@ -31,8 +31,7 @@ const config = [
         "error",
         {
           default: "disallow",
-          message: `FSD: слой «{{from.type}}» не может импортировать «{{to.type}}».
-             Импорты разрешены только в нижележащие слои.`,
+          message: `FSD: слой «{{from.type}}» не может импортировать «{{to.type}}». Импорты разрешены только в нижележащие слои.`,
           policies: [
             {
               from: { element: { type: "app" } },

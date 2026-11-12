@@ -33,11 +33,11 @@
   },
   "lint-staged": {
     "*.{js,mjs,cjs,ts,tsx}": [
-      "pnpm exec eslint --fix --max-warnings=0",
-      "pnpm exec prettier --write"
+      "pnpm --filter web exec eslint --fix --max-warnings=0",
+      "pnpm --filter web exec prettier --write"
     ],
     "*.{json,css,md,yml,yaml}": [
-      "pnpm exec prettier --write"
+      "pnpm --filter web exec prettier --write"
     ]
   }
 }
