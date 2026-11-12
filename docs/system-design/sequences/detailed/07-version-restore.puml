@@ -34,16 +34,23 @@ else lock взят
   COL -> PG : сбросить буфер правок доски в board_updates
   COL -> S3 : GET снапшот версии v
   S3 --> COL : versionUpdate
-  COL -> S3 : PUT текущий документ из памяти
-  COL -> PG : INSERT board_versions (kind = pre_restore,\nrestore_request_id)
-  COL -> COL : restoreTo(doc, versionUpdate) — синхронно, без await:\nминимальная разница «текущее → старое» одной транзакцией Yjs
-  COL -> PG : INSERT board_updates (обновление восстановления);\nrestore_applied_at; COMMIT (lock снят)
-  COL -> O : doc:update {restore diff}
-  COL -> R : PUBLISH collab:doc:{boardId}
-  COL -> O : version:restored {versionId, by, preRestoreVersionId}
-  COL -> U : version:restored
-  COL --> W : 200
+  COL -> COL : синхронно, без await:\npre = encodeStateAsUpdate(doc);\nrestoreTo(doc, versionUpdate) — минимальная разница\n«текущее → старое» одной транзакцией Yjs
+  note right of COL : между снимком и применением\nчужая правка не влезет.\nПочинки §17 этой доски\nотложены до конца шага
+  COL -> S3 : PUT pre (уже захваченные байты)
+  COL -> PG : INSERT board_versions (kind = pre_restore, restore_request_id);\nINSERT board_updates (обновление восстановления);\nrestore_applied_at; COMMIT (lock снят)
+  alt PUT или COMMIT упал
+    COL -> COL : выгрузить документ: не принимать правки доски,\nвыбросить Y.Doc (восстановление никуда не разослано)
+    COL -> O : disconnect «переподключись»
+    note right of O : буфер правок участников пишется обычным путём;\nнедописанное клиенты дошлют через sync:step1.\nДокумент загрузится из БД без восстановления
+    COL --> W : 5xx — ретрай джобы BullMQ
+  else записано
+    COL -> O : doc:update {restore diff} — только после COMMIT
+    COL -> R : PUBLISH collab:doc:{boardId}
+    COL -> O : version:restored {versionId, by, preRestoreVersionId}
+    COL -> U : version:restored
+    COL --> W : 200
+  end
 end
 deactivate COL
-note over U, O : никого не отключаем; параллельные правки сливаются по правилам CRDT,\n«удаление побеждает правку» (Р-13). Откат = восстановить pre_restore
+note over U, O : никого не отключаем (кроме сбоя записи); параллельные правки сливаются по правилам CRDT,\n«удаление побеждает правку» (Р-13): правка, пришедшая до рассылки восстановления\nна удаляемый элемент, пропадёт. Откат = восстановить pre_restore
 @enduml

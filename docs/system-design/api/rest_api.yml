@@ -11,7 +11,7 @@ info:
 
     **Соглашения:**
     - Аутентификация: `Authorization: Bearer <access JWT, 15 мин>`; refresh-токен — в httpOnly cookie `rt`
-      (path=/auth, SameSite=Lax, Secure), ротация при каждом `/auth/refresh` (с вехи 3; до неё refresh без ротации — Р-60).
+      (`Path=/api/auth`: API живёт под префиксом `/api`, SameSite=Lax, Secure), ротация при каждом `/auth/refresh` (с вехи 3; до неё refresh без ротации — Р-60).
     - Авторизация проверяется на каждом запросе: итоговая роль = max(роль в воркспейсе, роль на доске, роль по ссылке).
       Нет доступа к доске → `404` (не `403`), чтобы не раскрывать существование доски.
     - Пагинация курсорная: `?limit=20&cursor=<opaque>` → `{ items, nextCursor }`. Offset не используем:
@@ -66,7 +66,7 @@ paths:
         '201':
           description: Создан, сразу залогинен (refresh в cookie)
           headers:
-            Set-Cookie: { schema: { type: string }, description: 'rt=...; HttpOnly; Secure; SameSite=Lax; Path=/auth' }
+            Set-Cookie: { schema: { type: string }, description: 'rt=...; HttpOnly; Secure; SameSite=Lax; Path=/api/auth' }
           content:
             application/json:
               schema: { $ref: '#/components/schemas/AuthResponse' }
@@ -334,6 +334,12 @@ paths:
     post:
       tags: [workspaces]
       summary: Пригласить по email (owner/editor)
+      description: |
+        Роль в приглашении — только `editor` или `viewer`. Назначить `owner` может только owner
+        через `PATCH /workspaces/{workspaceId}/members/{userId}`; иначе editor пригласил бы второй свой аккаунт владельцем.
+        Пока почта не подтверждается (Р-55), приглашение не доставляется по совпадению email: ответ содержит
+        ссылку-приглашение, и приглашающий передаёт её адресату сам. Иначе приглашение получил бы тот,
+        кто зарегистрировал аккаунт на чужой адрес.
       parameters:
         - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
@@ -345,14 +351,27 @@ paths:
               required: [email, role]
               properties:
                 email: { type: string, format: email }
-                role: { $ref: '#/components/schemas/Role' }
+                role: { type: string, enum: [editor, viewer] }
       responses:
-        '201': { description: 'Приглашение создано, уведомление (email/TG/in-app) уходит через outbox' }
+        '201':
+          description: |
+            Приглашение создано. До подтверждения почты (Р-55) — только ссылка в ответе, без уведомления.
+            С подтверждением почты уведомление (email/TG/in-app) уходит через outbox и только аккаунту с подтверждённым адресом.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  inviteId: { type: string, format: uuid }
+                  inviteUrl: { type: string, description: 'ссылка с токеном; показывается один раз, в БД хранится только sha256' }
+                  expiresAt: { type: string, format: date-time }
+        '403': { $ref: '#/components/responses/Forbidden' }
 
   /invites/{token}/accept:
     post:
       tags: [workspaces]
       summary: Принять приглашение в воркспейс
+      description: Нужен вход. Роль из приглашения сервер ещё раз сверяет с правилом «только editor или viewer».
       parameters:
         - in: path
           name: token
@@ -915,6 +934,10 @@ paths:
     get:
       tags: [files]
       summary: Метаданные + presigned URL превью (для участника доски)
+      description: |
+        Превью отдаётся только по presigned GET (срок 1 ч) через публичный адрес хранилища `files.<домен>`.
+        Постоянного публичного пути к превью нет. Подпись задаёт `response-cache-control: private, max-age=3600`,
+        поэтому браузер не хранит превью дольше срока ссылки. Клиент кэширует ответ этого эндпоинта меньше часа.
       responses:
         '200':
           description: OK

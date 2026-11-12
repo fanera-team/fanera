@@ -18,9 +18,10 @@ alt нарушение
   C1 --> A : ack {ok:false, code: FORBIDDEN | TOO_LARGE | RATE_LIMITED}
 else ок
   C1 -> C1 : Y.applyUpdate(serverDoc, update)
-  alt ничего не изменилось (полный повтор)
+  alt полный повтор: state vector и удаления те же,\npending не вырос
+
     C1 --> A : ack {ok:true, n} — без рассылки и записи
-  else документ изменился
+  else документ изменился или update ждёт зависимость (pending)
     C1 -> C1 : проверить изменённые элементы по схеме,\nциклы, лимит элементов (§17)
     C1 -> B : doc:update {update}
     C1 -> R : adapter: emit в room board:{id}
@@ -30,8 +31,15 @@ else ок
     R -> C2 : серверная копия Y.Doc на collab-2 применяет правку
     C1 -> C1 : буфер записи: n = номер правки на сокете
     alt правка невалидна
+      C1 -> C1 : починка — своя правка (origin server-repair)
       C1 -> A : doc:update {repair} (починка — всем, включая автора)
       C1 -> B : doc:update {repair}
+      C1 -> R : adapter: emit repair в room board:{id}
+      R -> C2 : (доставка через Redis)
+      C2 -> C : doc:update {repair}
+      C1 -> R : PUBLISH collab:doc:{boardId} {repair}
+      R -> C2 : серверная копия на collab-2 применяет починку
+      C1 -> C1 : починка — в буфер записи\n(серверные правки пишет инстанс, который их сделал)
       C1 --> A : ack {ok:false, n, code: INVALID_ELEMENT, elementIds}
     else валидна
       C1 --> A : ack {ok:true, n} — «принято»

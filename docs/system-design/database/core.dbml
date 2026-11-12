@@ -324,6 +324,7 @@ Table ai_requests {
   selection_element_ids text[] [note: 'id выделенных элементов, <= 200']
   idempotency_key text [note: 'из заголовка Idempotency-Key']
   status ai_status [not null, default: 'queued']
+  run_id uuid [note: 'попытка BullMQ, которая сейчас владеет запросом; финальный переход проверяет его (deep-dive §16)']
   model varchar(50)
   input_tokens int
   output_tokens int

@@ -24,10 +24,19 @@ state "На связи" as Online #F7FBF7 {
   state "Сохраняется" as Saving : «сохраняется…»
 
   [*] --> Syncing
-  Syncing --> Saved : догнали сервер
+  Syncing --> Saved : догнали сервер,\nдосылать нечего
+  Syncing --> Saving : дослали офлайн-правки
   Saved --> Saving : своя правка
-  Saving --> Saved : doc:saved
+  Saving --> Saving : doc:saved {upTo} < n\nпоследней своей правки
+  Saving --> Saved : doc:saved {upTo} ≥ n последней\nсвоей правки и нет правок без ack
 }
+
+note right of Online
+  «Сохранено» — только когда записана
+  последняя своя правка (websocket.md §3).
+  Правка без ack ещё не получила n,
+  поэтому её doc:saved ещё впереди.
+end note
 
 state "Нет связи" as Offline #FFF8E1 : «нет связи — изменения\nхранятся в браузере»
 state "Только чтение" as ReadOnly #F3E5F5 : редактирование выключено
