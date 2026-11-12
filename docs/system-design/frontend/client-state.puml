@@ -1,0 +1,49 @@
+@startuml client-state
+' Зоны состояния на клиенте. Источник — deep-dive.md §14, подробности — frontend.md §1
+skinparam shadowing false
+skinparam defaultFontName "Helvetica"
+skinparam defaultFontSize 13
+skinparam ArrowColor #555555
+skinparam ArrowFontSize 11
+skinparam ArrowFontColor #555555
+skinparam nodesep 30
+skinparam ranksep 90
+skinparam rectangle {
+  BorderColor #555555
+  RoundCorner 12
+}
+left to right direction
+title Где живёт состояние на клиенте
+
+rectangle "<b>Откуда</b>" as COL1 #FFFFFF {
+  rectangle "api\n<size:11>REST</size>" as API #F2F2F2
+  rectangle "collab\n<size:11>WebSocket</size>" as WS #F2F2F2
+  rectangle "Пользователь\n<size:11>клики, клавиши</size>" as USER #F2F2F2
+}
+
+rectangle "<b>Где хранится</b>" as COL2 #FFFFFF {
+  rectangle "<b>TanStack Query</b>\n<size:11>данные сервера:</size>\n<size:11>каталог, роль, треды, версии</size>" as TQ #E3F2FD
+  rectangle "<b>Y.Doc</b> + IndexedDB\n<size:11>содержимое доски:</size>\n<size:11>все элементы</size>" as YD #E8F5E9
+  rectangle "<b>Awareness</b>\n<size:11>курсоры и кто на доске</size>" as AW #FFF3E0
+  rectangle "<b>Zustand</b>\n<size:11>UI: инструмент, зум, панели,</size>\n<size:11>статус «сохранено»</size>" as ZS #F3E5F5
+}
+
+rectangle "<b>Кто рисует</b>" as COL3 #FFFFFF {
+  rectangle "Панели и каталог\n<size:11>React</size>" as PANELS #E3F2FD
+  rectangle "Холст\n<size:11>только изменённые элементы</size>" as CANVAS #E8F5E9
+  rectangle "Слой курсоров\n<size:11>вне React-дерева</size>" as CURSORS #FFF3E0
+  rectangle "Тулбар, индикаторы\n<size:11>React</size>" as CHROME #F3E5F5
+}
+
+API --> TQ : запросы
+WS ..> TQ : «перезапроси»\n(только id)
+WS <--> YD : doc:update
+WS <--> AW : awareness
+WS --> ZS : ack, doc:saved,\nkicked
+USER --> ZS : инструмент, зум
+
+TQ --> PANELS
+YD --> CANVAS
+AW --> CURSORS
+ZS --> CHROME
+@enduml

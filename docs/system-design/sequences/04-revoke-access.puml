@@ -1,0 +1,22 @@
+@startuml 04-revoke-access
+!include _style.iuml
+title Владелец убирает участника, пока тот на доске
+
+actor "Владелец" as O
+participant "API" as API
+queue "Redis\n(шина событий)" as R
+participant "Сервер совместной\nработы (collab)" as S
+actor "Участник" as U
+
+O -> API : Убрать участника с доски $t("DELETE /boards/{id}/members/{u}")
+API -> API : Удалить доступ в базе
+API -> R : Права на доске X изменились $t("perm:changed")
+R -> S : Права на доске X изменились
+S -> U : Доступ закрыт $t("board:kicked")
+S -> U : Отключить соединение
+
+note over S
+  Подстраховка: если событие потерялось,
+  сервер сам перепроверяет права раз в 30 с.
+end note
+@enduml

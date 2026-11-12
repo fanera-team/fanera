@@ -1,0 +1,48 @@
+@startuml 03-reconnect
+!include ../_style.iuml
+title Обрыв сети и переподключение: офлайн-правки и передача кусками (Р-30, Р-36)\n(websocket.md §4.3)
+
+actor "Браузер" as C
+database "IndexedDB\n(y-indexeddb)" as IDB
+participant "LB" as LB
+participant "collab-инстанс\n(возможно, другой)" as COL
+
+C -[#red]x COL : связь потеряна (сеть, сон ноутбука, упал инстанс)
+
+loop пока нет связи
+  C -> C : правки в локальный Y.Doc
+  C -> IDB : сохранить локальный документ
+end
+note right of C : UI: «нет связи — изменения хранятся в браузере»
+
+C -> LB : reconnect: backoff 0,5…10 с + jitter 50%
+LB -> COL : WSS (hash boardId)
+activate COL
+COL -> COL : handshake как при открытии:\nJWT, роль, лимиты (может быть загрузка документа из БД)
+
+alt доступ отозван или доска удалена
+  COL --> C : connect_error / board:kicked
+  C -> C : «несохранённые изменения не применены»,\nпредложить экспорт в PNG
+else доступ есть
+  C -> COL : sync:step1 {stateVector клиента}
+  COL --> C : ack {всё, что клиент пропустил, stateVector сервера}
+  C -> C : diff = encodeStateAsUpdate(localDoc, serverSV)
+
+  alt diff ≤ 512 КБ
+    C -> COL : doc:update {diff}
+    COL --> C : ack {ok:true, n}
+  else diff > 512 КБ (долгий офлайн)
+    loop index = 0 … total-1, следующий кусок только после ack
+      C -> COL : sync:chunk {transferId, index, total, bytes ≤ 512 КБ}
+      COL -> COL : собрать в памяти (≤ 12 МБ, ≤ 60 с, одна передача на сокет)
+      COL --> C : ack {ok:true, next}
+    end
+    COL -> COL : целиком → обработка как doc:update
+    COL --> C : ack {ok:true, n}
+    note right of COL : обрыв посреди передачи → собранное выбрасывается,\nпосле реконнекта новый diff и новый transferId
+  end
+  COL --> C : doc:saved {upTo: n}
+  note over C, COL : состояния сошлись: CRDT не важен порядок и число пропущенных правок
+end
+deactivate COL
+@enduml

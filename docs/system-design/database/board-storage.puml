@@ -1,0 +1,51 @@
+@startuml board-storage
+' Где хранятся части одной доски. Подробно — database/README.md
+skinparam shadowing false
+skinparam defaultFontName "Helvetica"
+skinparam defaultFontSize 13
+skinparam ArrowColor #444444
+skinparam rectangle {
+  BackgroundColor #E8EEF7
+  BorderColor #555555
+  RoundCorner 12
+}
+skinparam database {
+  BackgroundColor #FFF8E1
+  BorderColor #555555
+}
+title Где живёт одна доска
+
+rectangle "Доска «Архитектура магазина»" as BOARD #FFFFFF
+
+database "PostgreSQL core" as CORE {
+  rectangle "<b>boards</b>\n<size:11>название, воркспейс, владелец,</size>\n<size:11>корзина, избранное</size>" as CB
+  rectangle "<b>board_members, board_share_links</b>\n<size:11>кто имеет доступ и с какой ролью</size>" as CM
+  rectangle "<b>comment_threads, comments</b>\n<size:11>обсуждения на доске</size>" as CC
+}
+
+database "PostgreSQL collab" as COLLAB {
+  rectangle "<b>board_documents</b>\n<size:11>снимок содержимого (Yjs, bytea)</size>" as DD
+  rectangle "<b>board_updates</b>\n<size:11>журнал свежих правок</size>" as DU
+  rectangle "<b>board_versions</b>\n<size:11>список версий для истории</size>" as DV
+}
+
+database "S3" as S3 {
+  rectangle "<b>versions/…</b>\n<size:11>снимки версий</size>" as SV
+  rectangle "<b>картинки</b>\n<size:11>оригиналы и превью</size>" as SI
+}
+
+database "Redis" as REDIS {
+  rectangle "<b>presence, курсоры</b>\n<size:11>кто сейчас на доске;</size>\n<size:11>не сохраняется</size>" as RP
+}
+
+rectangle "Браузер" as BR {
+  rectangle "<b>Y.Doc</b>\n<size:11>полная копия содержимого</size>\n<size:11>+ IndexedDB на случай обрыва сети</size>" as BY
+}
+
+BOARD --> CB : «паспорт»\n(REST)
+BOARD --> DD : содержимое\n(WebSocket)
+BOARD --> SV : история
+BOARD --> RP : кто онлайн
+BOARD --> BY : копия у\nкаждого участника
+CB .. DD : связь по board_id\n(без FK: разные БД)
+@enduml

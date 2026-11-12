@@ -1,0 +1,52 @@
+@startuml containers
+!include <C4/C4_Container>
+' C4, уровень 2: из каких контейнеров состоит система и кто с кем говорит.
+' Детали потоков — architecture/README.md §3 и sequences/.
+
+title Container: аналог Miro (1 000 DAU, один VPS)
+
+Person(user, "Пользователь", "браузер, desktop")
+
+System_Boundary(sys, "Один VPS, docker compose") {
+  Container(web, "Web App", "Next.js, Yjs", "каталог, холст, локальная копия доски")
+  Container(lb, "nginx", "nginx", "TLS, роутинг, привязка доски к процессу collab")
+
+  Container(api, "api ×2", "NestJS", "REST: вход, доски, права, комментарии, версии, файлы, ИИ")
+  Container(collab, "collab ×2", "NestJS + socket.io", "доска в реальном времени: правки, курсоры, права на каждое событие")
+  Container(worker, "worker ×1", "NestJS + BullMQ", "фон: ИИ, картинки, компакция, версии, уведомления")
+
+  ContainerDb(pg, "PostgreSQL", "схемы core и collab", "core: пользователи, доски, права, комментарии. collab: документы досок и лог правок")
+  ContainerDb(redis, "Redis", "Redis 7", "pub/sub между процессами collab, кэш прав, очередь задач")
+  ContainerDb(s3, "MinIO", "S3-совместимое", "картинки и снимки версий")
+
+  Container(obs, "Мониторинг", "Prometheus, Loki, Grafana", "метрики и логи всех сервисов")
+}
+
+System_Ext(llm, "LLM-провайдер", "OpenAI-совместимый API")
+System_Ext(tg, "Telegram Bot API", "уведомления")
+
+Rel_D(user, web, "работает", "HTTPS")
+Rel_D(web, lb, "REST + WebSocket", "HTTPS, WSS")
+Rel_D(web, s3, "картинки напрямую", "presigned URL")
+
+Rel_D(lb, api, "/api")
+Rel_D(lb, collab, "/collab")
+
+Rel_D(api, pg, "SQL")
+Rel_D(api, redis, "кэш прав, ставит задачи")
+Rel_D(collab, pg, "документы, лог правок")
+Rel_D(collab, redis, "pub/sub")
+Rel_D(worker, redis, "берёт задачи")
+Rel_D(worker, pg, "SQL")
+Rel_D(worker, s3, "картинки, версии")
+
+Rel_R(worker, llm, "запросы ИИ", "HTTPS")
+Rel_R(worker, tg, "уведомления", "HTTPS")
+
+Lay_R(api, collab)
+Lay_R(collab, worker)
+Lay_R(pg, redis)
+Lay_R(redis, s3)
+Lay_D(worker, obs)
+Lay_R(llm, tg)
+@enduml

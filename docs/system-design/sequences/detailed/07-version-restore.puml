@@ -1,0 +1,49 @@
+@startuml 07-version-restore
+!include ../_style.iuml
+title Восстановление версии, пока на доске работают люди (Р-37)\n(architecture/README §3.3 · deep-dive §5)
+
+actor "Редактор" as U
+participant "api" as API
+queue "Redis queue" as Q
+participant "worker" as W
+participant "LB\n(внутренний listener,\nhash boardId)" as LB
+participant "collab-инстанс\nс документом" as COL
+database "PG collab" as PG
+database "S3" as S3
+queue "Redis realtime" as R
+actor "Другие участники" as O
+
+U -> API : POST /versions/{v}/restore\nIdempotency-Key
+API -> Q : add job restore-{requestId}
+API --> U : 202
+
+Q -> W : job restore-{requestId}
+W -> LB : внутренний вызов restore(boardId, v, requestId)
+LB -> COL : тот же инстанс, что держит WebSocket доски
+activate COL
+opt документ нигде не открыт
+  COL -> PG : загрузить документ (DocumentLoader)
+end
+COL -> PG : BEGIN; pg_try_advisory_xact_lock(boardId)
+alt lock не взят
+  COL --> W : 409 — восстановление уже идёт
+else lock взят
+  opt уже есть restore_applied_at для requestId
+    COL --> W : 200 — повтор джобы, выходим
+  end
+  COL -> PG : сбросить буфер правок доски в board_updates
+  COL -> S3 : GET снапшот версии v
+  S3 --> COL : versionUpdate
+  COL -> S3 : PUT текущий документ из памяти
+  COL -> PG : INSERT board_versions (kind = pre_restore,\nrestore_request_id)
+  COL -> COL : restoreTo(doc, versionUpdate) — синхронно, без await:\nминимальная разница «текущее → старое» одной транзакцией Yjs
+  COL -> PG : INSERT board_updates (обновление восстановления);\nrestore_applied_at; COMMIT (lock снят)
+  COL -> O : doc:update {restore diff}
+  COL -> R : PUBLISH collab:doc:{boardId}
+  COL -> O : version:restored {versionId, by, preRestoreVersionId}
+  COL -> U : version:restored
+  COL --> W : 200
+end
+deactivate COL
+note over U, O : никого не отключаем; параллельные правки сливаются по правилам CRDT,\n«удаление побеждает правку» (Р-13). Откат = восстановить pre_restore
+@enduml

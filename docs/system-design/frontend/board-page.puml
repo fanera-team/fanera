@@ -1,0 +1,53 @@
+@startuml board-page
+!include ../sequences/_style.iuml
+title Страница доски на клиенте: от открытия до работы
+
+actor "Пользователь" as U
+participant "Страница доски" as P
+participant "TanStack Query" as TQ
+participant "Y.Doc\n+ IndexedDB" as YD
+participant "Socket-провайдер" as S
+participant "collab" as COL
+participant "Холст" as C
+
+U -> P : Открывает доску
+P -> TQ : Паспорт доски и моя роль $t("GET /boards/{id}")
+note right of TQ : 404 → «доски нет или нет доступа»,\nдальше не идём
+
+P -> YD : Создать Y.Doc, поднять локальную копию $t("new Y.Doc() + IndexeddbPersistence(boardId)")
+note right of YD : там могут быть правки, сделанные\nбез сети в прошлый раз
+
+P -> S : Подключиться к доске $t("io('/collab', {auth: {token, protocolVersion}, query: {boardId}})")
+S -> COL : WebSocket
+COL --> S : Кто сейчас на доске $t("presence:snapshot")
+S -> COL : Вот что у меня есть $t("sync:step1 {stateVector}")
+COL --> S : Вот чего не хватает $t("ack {update, stateVector}")
+S -> YD : Применить $t("Y.applyUpdate(doc, update, 'remote')")
+S -> COL : Дослать то, чего нет у сервера $t("doc:update, если есть")
+
+P -> C : Нарисовать элементы, подписаться на изменения $t("elements.observeDeep")
+P -> YD : Включить отмену только своих правок $t("new Y.UndoManager(elements, {trackedOrigins: ['local']})")
+P -> S : Мой курсор, имя, цвет $t("awareness.setLocalState")
+
+== работа ==
+
+U -> C : Двигает стикер
+C -> YD : Изменить элемент $t("doc.transact(fn, 'local')")
+YD -> C : Перерисовать сразу
+YD -> S : Событие update с origin 'local'
+S -> COL : Отправить правку $t("doc:update (emitWithAck)")
+COL --> S : Принято, а чуть позже — сохранено $t("ack {ok, n}, затем doc:saved {upTo}")
+COL -> S : Чужая правка $t("doc:update")
+S -> YD : $t("Y.applyUpdate(doc, update, 'remote')")
+YD -> C : Перерисовать изменённые элементы
+
+== уход со страницы ==
+
+P -> S : Отключиться $t("socket.disconnect()")
+P -> YD : Освободить $t("undoManager.destroy(), doc.destroy()")
+
+note over U, C
+  Правки с origin 'remote' не отправляем обратно на сервер
+  и не добавляем в UndoManager: Ctrl+Z отменяет только своё.
+end note
+@enduml

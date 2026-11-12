@@ -1,0 +1,1374 @@
+openapi: 3.0.3
+info:
+  title: Miro-like Boards — REST API
+  version: 0.1.0
+  description: |
+    REST API аналога Miro. Открыть: https://editor.swagger.io
+
+    **Что здесь, а что в WebSocket.** REST — всё «про доски»: аккаунт, воркспейсы, права, каталог, корзина,
+    комментарии, версии, файлы, ИИ-запросы, уведомления. Содержимое доски, курсоры и присутствие идут по
+    WebSocket (см. `websocket.md`).
+
+    **Соглашения:**
+    - Аутентификация: `Authorization: Bearer <access JWT, 15 мин>`; refresh-токен — в httpOnly cookie `rt`
+      (path=/auth, SameSite=Lax, Secure), ротация при каждом `/auth/refresh` (с вехи 3; до неё refresh без ротации — Р-60).
+    - Авторизация проверяется на каждом запросе: итоговая роль = max(роль в воркспейсе, роль на доске, роль по ссылке).
+      Нет доступа к доске → `404` (не `403`), чтобы не раскрывать существование доски.
+    - Пагинация курсорная: `?limit=20&cursor=<opaque>` → `{ items, nextCursor }`. Offset не используем:
+      при вставках он «съезжает» и медленный на больших смещениях.
+    - Идемпотентность: создающие POST принимают `Idempotency-Key` (uuid, хранится 24 ч в Postgres, таблица
+      `idempotency_keys`, в той же транзакции, что и создание). Повтор, в том числе параллельный, возвращает тот же
+      ответ; тот же ключ с другим телом — `422 IDEMPOTENCY_KEY_REUSED`. Для тредов и комментариев
+      id генерирует клиент — повтор запроса с тем же id не создаёт дубль.
+    - Ошибки: RFC 9457 `application/problem+json`.
+    - Rate limit: 100 запросов/мин на пользователя, `/auth/login` — 5/мин на IP. При превышении `429` + `Retry-After`.
+    - Тяжёлые операции (копирование доски, восстановление версии, ИИ) возвращают `202 Accepted`,
+      результат приходит событием по WebSocket и доступен через GET.
+servers:
+  - url: https://<домен>/api
+  - url: http://localhost:3001/api
+security:
+  - bearerAuth: []
+
+tags:
+  - name: auth
+  - name: me
+  - name: workspaces
+  - name: boards
+  - name: trash
+  - name: sharing
+  - name: comments
+  - name: versions
+  - name: files
+  - name: ai
+  - name: notifications
+  - name: telegram
+
+paths:
+  # ---------------- AUTH ----------------
+  /auth/register:
+    post:
+      tags: [auth]
+      summary: Регистрация email + пароль
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password, name]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string, minLength: 8, maxLength: 128 }
+                name: { type: string, maxLength: 100 }
+      responses:
+        '201':
+          description: Создан, сразу залогинен (refresh в cookie)
+          headers:
+            Set-Cookie: { schema: { type: string }, description: 'rt=...; HttpOnly; Secure; SameSite=Lax; Path=/auth' }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AuthResponse' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /auth/login:
+    post:
+      tags: [auth]
+      summary: Вход
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string }
+      responses:
+        '200':
+          description: OK
+          headers:
+            Set-Cookie: { schema: { type: string } }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AuthResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  /auth/refresh:
+    post:
+      tags: [auth]
+      summary: Новый access-токен по refresh-cookie (ротация refresh)
+      description: Повторное использование уже использованного refresh-токена = признак кражи → отзываем всю семью сессий. Исключение — повтор предыдущего refresh в течение 10 с после ротации (несколько вкладок, потерянный ответ): возвращаем ту же новую пару токенов (Р-59).
+      security:
+        - refreshCookie: []
+      responses:
+        '200':
+          description: OK
+          headers:
+            Set-Cookie: { schema: { type: string } }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AuthResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /auth/logout:
+    post:
+      tags: [auth]
+      summary: Выход (отзыв текущей сессии; ?all=true — всех сессий, WS-соединения отключаются)
+      parameters:
+        - in: query
+          name: all
+          schema: { type: boolean, default: false }
+      responses:
+        '204': { description: 'OK' }
+
+  /auth/oauth/{provider}:
+    get:
+      tags: [auth]
+      summary: Начать OAuth (редирект к провайдеру)
+      security: []
+      parameters:
+        - in: path
+          name: provider
+          required: true
+          schema: { type: string, enum: [github, google] }
+      responses:
+        '302': { description: 'Redirect' }
+
+  # ---------------- ME ----------------
+  /me:
+    get:
+      tags: [me]
+      summary: Профиль текущего пользователя
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Me' }
+    patch:
+      tags: [me]
+      summary: Обновить профиль и настройки
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string, maxLength: 100 }
+                avatarFileId: { type: string, format: uuid }
+                locale: { type: string }
+                notificationSettings: { $ref: '#/components/schemas/NotificationSettings' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Me' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  # ---------------- TELEGRAM ----------------
+  /me/telegram/link:
+    post:
+      tags: [telegram]
+      summary: Получить deep link для привязки Telegram
+      description: Создаёт одноразовый токен (10 мин). Пользователь открывает `https://t.me/<bot>?start=<token>`, бот получает `/start <token>` и привязывает chat_id.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  url: { type: string, example: 'https://t.me/miro_like_bot?start=Xk3...' }
+                  expiresAt: { type: string, format: date-time }
+    delete:
+      tags: [telegram]
+      summary: Отвязать Telegram
+      responses:
+        '204': { description: 'OK' }
+
+  /telegram/webhook:
+    post:
+      tags: [telegram]
+      summary: Webhook Telegram Bot API (входящие апдейты бота)
+      security:
+        - telegramSecret: []
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object, description: 'Telegram Update' }
+      responses:
+        '200': { description: 'OK (всегда, чтобы Telegram не ретраил бесконечно)' }
+
+  # ---------------- WORKSPACES ----------------
+  /workspaces:
+    get:
+      tags: [workspaces]
+      summary: Мои воркспейсы
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: '#/components/schemas/Workspace' }
+    post:
+      tags: [workspaces]
+      summary: Создать воркспейс (создатель — owner)
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string, maxLength: 100 }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Workspace' }
+
+  /workspaces/{workspaceId}:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+    get:
+      tags: [workspaces]
+      summary: Воркспейс
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Workspace' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    patch:
+      tags: [workspaces]
+      summary: Переименовать (owner)
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string, maxLength: 100 }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Workspace' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    delete:
+      tags: [workspaces]
+      summary: Удалить (owner; все доски уходят в корзину)
+      responses:
+        '204': { description: 'OK' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /workspaces/{workspaceId}/members:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+    get:
+      tags: [workspaces]
+      summary: Участники воркспейса
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: '#/components/schemas/Member' }
+
+  /workspaces/{workspaceId}/members/{userId}:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/UserId'
+    patch:
+      tags: [workspaces]
+      summary: Изменить роль участника (owner)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [role]
+              properties:
+                role: { $ref: '#/components/schemas/Role' }
+      responses:
+        '200':
+          description: OK, открытые сокеты участника получают `board:permission-changed`
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Member' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    delete:
+      tags: [workspaces]
+      summary: Исключить участника (owner) или выйти самому
+      responses:
+        '204': { description: 'OK, сокеты участника отключаются от досок воркспейса (`board:kicked`)' }
+
+  /workspaces/{workspaceId}/invites:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+    post:
+      tags: [workspaces]
+      summary: Пригласить по email (owner/editor)
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, role]
+              properties:
+                email: { type: string, format: email }
+                role: { $ref: '#/components/schemas/Role' }
+      responses:
+        '201': { description: 'Приглашение создано, уведомление (email/TG/in-app) уходит через outbox' }
+
+  /invites/{token}/accept:
+    post:
+      tags: [workspaces]
+      summary: Принять приглашение в воркспейс
+      parameters:
+        - in: path
+          name: token
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Workspace' }
+        '410': { description: 'Приглашение истекло или отозвано' }
+
+  # ---------------- BOARDS ----------------
+  /workspaces/{workspaceId}/boards:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+    get:
+      tags: [boards]
+      summary: Каталог досок — поиск, фильтры, сортировка
+      parameters:
+        - in: query
+          name: q
+          description: Поиск по названию (подстрока, pg_trgm)
+          schema: { type: string, maxLength: 100 }
+        - in: query
+          name: filter
+          schema: { type: string, enum: [all, mine, recent, favorites, shared_with_me], default: all }
+        - in: query
+          name: ownerId
+          schema: { type: string, format: uuid }
+        - in: query
+          name: sort
+          schema: { type: string, enum: [updated_desc, created_desc, title_asc, opened_desc], default: updated_desc }
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: '#/components/schemas/BoardSummary' }
+                  nextCursor: { type: string, nullable: true }
+    post:
+      tags: [boards]
+      summary: Создать доску (editor+ воркспейса)
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title]
+              properties:
+                title: { type: string, maxLength: 200 }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Board' }
+
+  /boards/{boardId}:
+    parameters:
+      - $ref: '#/components/parameters/BoardId'
+    get:
+      tags: [boards]
+      summary: Метаданные доски + моя роль (содержимое — через WebSocket)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Board' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    patch:
+      tags: [boards]
+      summary: Переименовать / в избранное (editor+; favorite — любой с доступом)
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title: { type: string, maxLength: 200 }
+                favorite: { type: boolean }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Board' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    delete:
+      tags: [boards]
+      summary: Удалить в корзину (owner). Подключённые участники получают `board:kicked {reason:"board_deleted"}`
+      responses:
+        '204': { description: 'OK' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /boards/{boardId}/copy:
+    parameters:
+      - $ref: '#/components/parameters/BoardId'
+    post:
+      tags: [boards]
+      summary: Копировать доску (viewer+ на исходной и editor+ в целевом воркспейсе, Р-51; асинхронно — копируются документ и файлы в S3)
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title: { type: string, maxLength: 200 }
+                targetWorkspaceId: { type: string, format: uuid }
+      responses:
+        '202':
+          description: Создана доска-заготовка со статусом copying; результат — событие `board:copy-done` (status ready или copy_failed)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Board' }
+
+  # ---------------- TRASH ----------------
+  /workspaces/{workspaceId}/trash:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+    get:
+      tags: [trash]
+      summary: Корзина воркспейса
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: '#/components/schemas/BoardSummary' }
+                  nextCursor: { type: string, nullable: true }
+
+  /boards/{boardId}/restore:
+    parameters:
+      - $ref: '#/components/parameters/BoardId'
+    post:
+      tags: [trash]
+      summary: Восстановить из корзины (owner)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Board' }
+        '410': { description: 'Уже удалена окончательно или удаление уже началось (status = purging)' }
+
+  /boards/{boardId}/permanent:
+    parameters:
+      - $ref: '#/components/parameters/BoardId'
+    delete:
+      tags: [trash]
+      summary: Удалить навсегда (owner; асинхронно — документ, версии, файлы)
+      responses:
+        '202': { description: 'Accepted' }
+
+  # ---------------- SHARING ----------------
+  /boards/{boardId}/members:
+    parameters:
+      - $ref: '#/components/parameters/BoardId'
+    get:
+      tags: [sharing]
+      summary: Кто имеет доступ к доске (с источником роли)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: '#/components/schemas/Member' }
+    post:
+      tags: [sharing]
+      summary: Выдать доступ пользователю (owner)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [role]
+              properties:
+                userId: { type: string, format: uuid }
+                email: { type: string, format: email }
+                role: { $ref: '#/components/schemas/Role' }
+      responses:
+        '201': { description: 'OK, уведомление «вас пригласили на доску» через outbox' }
+
+  /boards/{boardId}/members/{userId}:
+    parameters:
+      - $ref: '#/components/parameters/BoardId'
+      - $ref: '#/components/parameters/UserId'
+    patch:
+      tags: [sharing]
+      summary: Изменить роль (owner)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [role]
+              properties:
+                role: { $ref: '#/components/schemas/Role' }
+      responses:
+        '200': { description: 'OK, сокеты пользователя получают `board:permission-changed`' }
+    delete:
+      tags: [sharing]
+      summary: Отозвать доступ (owner) — сокеты пользователя отключаются от доски < 5 с
+      responses:
+        '204': { description: 'OK' }
+
+  /boards/{boardId}/share-links:
+    parameters:
+      - $ref: '#/components/parameters/BoardId'
+    get:
+      tags: [sharing]
+      summary: Активные ссылки-приглашения (owner)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: '#/components/schemas/ShareLink' }
+    post:
+      tags: [sharing]
+      summary: Создать ссылку (owner). Токен показывается ОДИН раз, в БД — только хэш
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [role]
+              properties:
+                role: { type: string, enum: [viewer, editor] }
+                expiresAt: { type: string, format: date-time, nullable: true }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ShareLink'
+                  - type: object
+                    properties:
+                      url: { type: string, example: 'https://app.example.com/join/9fK2...' }
+
+  /boards/{boardId}/share-links/{linkId}:
+    parameters:
+      - $ref: '#/components/parameters/BoardId'
+      - in: path
+        name: linkId
+        required: true
+        schema: { type: string, format: uuid }
+    delete:
+      tags: [sharing]
+      summary: Отозвать ссылку (и доступ всех, кто пришёл только по ней)
+      responses:
+        '204': { description: 'OK' }
+
+  /share-links/{token}/join:
+    parameters:
+      - in: path
+        name: token
+        required: true
+        schema: { type: string }
+    post:
+      tags: [sharing]
+      summary: Войти на доску по ссылке (нужен логин)
+      responses:
+        '200':
+          description: Доступ выдан (строка в board_link_members; другие источники доступа не меняются)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Board' }
+        '410': { description: 'Ссылка отозвана или истекла' }
+
+  # ---------------- COMMENTS ----------------
+  /boards/{boardId}/threads:
+    parameters:
+      - $ref: '#/components/parameters/BoardId'
+    get:
+      tags: [comments]
+      summary: Треды доски
+      parameters:
+        - in: query
+          name: resolved
+          schema: { type: boolean }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: '#/components/schemas/Thread' }
+    post:
+      tags: [comments]
+      summary: Создать тред с первым комментарием (viewer+ — комментировать может и наблюдатель)
+      description: id треда и комментария генерирует клиент → повтор запроса идемпотентен. После записи участникам доски уходит `comments:changed`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [id, anchor, comment]
+              properties:
+                id: { type: string, format: uuid }
+                anchor: { $ref: '#/components/schemas/Anchor' }
+                comment:
+                  type: object
+                  required: [id, body]
+                  properties:
+                    id: { type: string, format: uuid }
+                    body: { type: string, maxLength: 5000 }
+                    mentions: { type: array, items: { type: string, format: uuid } }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Thread' }
+        '200': { description: 'Уже создан ранее (тот же id) — возвращаем существующий' }
+
+  /threads/{threadId}:
+    parameters:
+      - $ref: '#/components/parameters/ThreadId'
+    patch:
+      tags: [comments]
+      summary: Отметить решённым / переоткрыть, перепривязать (viewer+, Р-51)
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                resolved: { type: boolean }
+                anchor: { $ref: '#/components/schemas/Anchor' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Thread' }
+
+  /threads/{threadId}/comments:
+    parameters:
+      - $ref: '#/components/parameters/ThreadId'
+    post:
+      tags: [comments]
+      summary: Ответить в треде (уведомляет участников треда и упомянутых)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [id, body]
+              properties:
+                id: { type: string, format: uuid }
+                body: { type: string, maxLength: 5000 }
+                mentions: { type: array, items: { type: string, format: uuid } }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Comment' }
+
+  /comments/{commentId}:
+    parameters:
+      - in: path
+        name: commentId
+        required: true
+        schema: { type: string, format: uuid }
+    patch:
+      tags: [comments]
+      summary: Редактировать свой комментарий
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                body: { type: string, maxLength: 5000 }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Comment' }
+    delete:
+      tags: [comments]
+      summary: Удалить свой комментарий (owner доски — любой)
+      responses:
+        '204': { description: 'OK' }
+
+  # ---------------- VERSIONS ----------------
+  /boards/{boardId}/versions:
+    parameters:
+      - $ref: '#/components/parameters/BoardId'
+    get:
+      tags: [versions]
+      summary: История версий (viewer+, Р-51)
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: '#/components/schemas/Version' }
+                  nextCursor: { type: string, nullable: true }
+    post:
+      tags: [versions]
+      summary: Сохранить именованную версию (editor+)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string, maxLength: 200 }
+      responses:
+        '202': { description: 'Снапшот создаётся воркером; событие `version:created`' }
+
+  /boards/{boardId}/versions/{versionId}:
+    parameters:
+      - $ref: '#/components/parameters/BoardId'
+      - $ref: '#/components/parameters/VersionId'
+    get:
+      tags: [versions]
+      summary: Посмотреть версию — presigned URL на снапшот (клиент рендерит read-only)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Version'
+                  - type: object
+                    properties:
+                      snapshotUrl: { type: string, description: 'presigned GET, 5 мин' }
+
+  /boards/{boardId}/versions/{versionId}/restore:
+    parameters:
+      - $ref: '#/components/parameters/BoardId'
+      - $ref: '#/components/parameters/VersionId'
+    post:
+      tags: [versions]
+      summary: Восстановить версию (editor+)
+      description: |
+        Выполняет collab-инстанс, который держит документ (с его правками последней секунды):
+        1) сохраняется версия `pre_restore` текущего состояния; 2) сервер вычисляет разницу «текущее → выбранная версия»
+        и применяет её ОДНОЙ обычной транзакцией Yjs. Участники остаются подключены и видят изменения как обычные правки
+        + уведомление `version:restored`. Параллельные правки сливаются по правилам CRDT: правка элемента, который
+        восстановление удаляет, пропадёт (удаление побеждает). Результат одинаков у всех.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '202': { description: 'Accepted' }
+        '409': { description: 'Восстановление этой доски уже выполняется' }
+
+  # ---------------- FILES ----------------
+  /boards/{boardId}/files:
+    parameters:
+      - $ref: '#/components/parameters/BoardId'
+    post:
+      tags: [files]
+      summary: Начать загрузку изображения (editor+) — получить presigned POST в S3
+      description: Клиент загружает файл напрямую в S3 (не через наш API). Условие `content-length-range` в политике не даст загрузить > 10 МБ.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [mime, sizeBytes]
+              properties:
+                mime: { type: string, enum: [image/png, image/jpeg, image/webp, image/gif] }
+                sizeBytes: { type: integer, maximum: 10485760 }
+                fileName: { type: string, maxLength: 200 }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  fileId: { type: string, format: uuid }
+                  upload:
+                    type: object
+                    properties:
+                      url: { type: string }
+                      fields: { type: object, additionalProperties: { type: string } }
+                      expiresAt: { type: string, format: date-time }
+        '413': { description: 'Слишком большой файл' }
+        '415': { description: 'Неподдерживаемый тип' }
+
+  /files/{fileId}/complete:
+    parameters:
+      - $ref: '#/components/parameters/FileId'
+    post:
+      tags: [files]
+      summary: Сообщить, что загрузка завершена → фоновая обработка (проверка magic bytes, EXIF, превью)
+      responses:
+        '202':
+          description: Обработка поставлена в очередь; результат — событие `file:ready` / `file:failed`
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/File' }
+
+  /files/{fileId}:
+    parameters:
+      - $ref: '#/components/parameters/FileId'
+    get:
+      tags: [files]
+      summary: Метаданные + presigned URL превью (для участника доски)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/File' }
+
+  # ---------------- AI ----------------
+  /boards/{boardId}/ai/requests:
+    parameters:
+      - $ref: '#/components/parameters/BoardId'
+    post:
+      tags: [ai]
+      summary: Запрос к ИИ (editor+). Асинхронно через BullMQ
+      description: |
+        Квота: 20/день, 3/мин на пользователя (`429` + `Retry-After`). Результат — черновик (`AiSuggestion`),
+        который клиент показывает как превью. «Применить» делает КЛИЕНТ (транзакция Yjs) → действие отменяется Ctrl+Z.
+        Прогресс и готовность приходят событиями `ai:progress` / `ai:done` по WebSocket.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [kind]
+              properties:
+                kind: { type: string, enum: [generate_diagram, brainstorm, cluster, summarize, expand] }
+                prompt: { type: string, maxLength: 2000 }
+                selectionElementIds:
+                  type: array
+                  maxItems: 200
+                  items: { type: string }
+                anchor:
+                  type: object
+                  description: Куда на холсте класть результат
+                  properties:
+                    x: { type: number }
+                    y: { type: number }
+      responses:
+        '202':
+          description: Accepted
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AiRequest' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  /ai/requests/{requestId}:
+    parameters:
+      - $ref: '#/components/parameters/AiRequestId'
+    get:
+      tags: [ai]
+      summary: Статус запроса и черновик (fallback, если WS-событие потерялось)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AiRequest' }
+    delete:
+      tags: [ai]
+      summary: Отменить (если ещё не выполнен) — квота возвращается
+      responses:
+        '204': { description: 'OK' }
+
+  /ai/requests/{requestId}/decision:
+    parameters:
+      - $ref: '#/components/parameters/AiRequestId'
+    post:
+      tags: [ai]
+      summary: Пользователь применил или отклонил черновик (для аналитики качества и TTL)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [decision]
+              properties:
+                decision: { type: string, enum: [applied, rejected] }
+      responses:
+        '204': { description: 'OK' }
+
+  # ---------------- NOTIFICATIONS ----------------
+  /notifications:
+    get:
+      tags: [notifications]
+      summary: Мои уведомления
+      parameters:
+        - in: query
+          name: unread
+          schema: { type: boolean }
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: '#/components/schemas/Notification' }
+                  nextCursor: { type: string, nullable: true }
+                  unreadCount: { type: integer }
+
+  /notifications/read:
+    post:
+      tags: [notifications]
+      summary: Отметить прочитанными (список id или все)
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ids: { type: array, items: { type: string, format: uuid } }
+                all: { type: boolean }
+      responses:
+        '204': { description: 'OK' }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    refreshCookie:
+      type: apiKey
+      in: cookie
+      name: rt
+    telegramSecret:
+      type: apiKey
+      in: header
+      name: X-Telegram-Bot-Api-Secret-Token
+
+  parameters:
+    WorkspaceId:
+      in: path
+      name: workspaceId
+      required: true
+      schema: { type: string, format: uuid }
+    BoardId:
+      in: path
+      name: boardId
+      required: true
+      schema: { type: string, format: uuid }
+    UserId:
+      in: path
+      name: userId
+      required: true
+      schema: { type: string, format: uuid }
+    ThreadId:
+      in: path
+      name: threadId
+      required: true
+      schema: { type: string, format: uuid }
+    VersionId:
+      in: path
+      name: versionId
+      required: true
+      schema: { type: string, format: uuid }
+    FileId:
+      in: path
+      name: fileId
+      required: true
+      schema: { type: string, format: uuid }
+    AiRequestId:
+      in: path
+      name: requestId
+      required: true
+      schema: { type: string, format: uuid }
+    Limit:
+      in: query
+      name: limit
+      schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+    Cursor:
+      in: query
+      name: cursor
+      description: Непрозрачный курсор из предыдущего ответа (base64 от (sort_value, id))
+      schema: { type: string }
+    IdempotencyKey:
+      in: header
+      name: Idempotency-Key
+      description: >-
+        uuid; повтор с тем же ключом в течение 24 ч (в том числе параллельный — двойной клик) вернёт тот же ответ
+        без повторного выполнения. Тот же ключ с другим телом запроса — 422 IDEMPOTENCY_KEY_REUSED
+      schema: { type: string, format: uuid }
+
+  responses:
+    Unauthorized:
+      description: Нет или невалиден access-токен
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    Forbidden:
+      description: Недостаточно прав (например, viewer пытается изменить)
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    NotFound:
+      description: Не найдено или нет доступа
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    Conflict:
+      description: Конфликт (например, email занят)
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    ValidationError:
+      description: Ошибка валидации
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    TooManyRequests:
+      description: Превышен лимит
+      headers:
+        Retry-After: { schema: { type: integer } }
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+
+  schemas:
+    Problem:
+      type: object
+      properties:
+        type: { type: string, example: 'https://api.example.com/problems/forbidden' }
+        title: { type: string }
+        status: { type: integer }
+        detail: { type: string }
+        code: { type: string, example: 'BOARD_READ_ONLY' }
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              field: { type: string }
+              message: { type: string }
+
+    Role:
+      type: string
+      enum: [owner, editor, viewer]
+
+    AuthResponse:
+      type: object
+      properties:
+        accessToken: { type: string }
+        expiresIn: { type: integer, example: 900 }
+        user: { $ref: '#/components/schemas/UserPublic' }
+
+    UserPublic:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        avatarUrl: { type: string, nullable: true }
+
+    NotificationSettings:
+      type: object
+      properties:
+        telegram:
+          type: object
+          properties:
+            invite: { type: boolean }
+            mention: { type: boolean }
+            reply: { type: boolean }
+
+    Me:
+      allOf:
+        - $ref: '#/components/schemas/UserPublic'
+        - type: object
+          properties:
+            email: { type: string, format: email }
+            locale: { type: string }
+            telegramLinked: { type: boolean }
+            notificationSettings: { $ref: '#/components/schemas/NotificationSettings' }
+            aiQuota:
+              type: object
+              properties:
+                usedToday: { type: integer }
+                limitPerDay: { type: integer, example: 20 }
+
+    Workspace:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        myRole: { $ref: '#/components/schemas/Role' }
+        membersCount: { type: integer }
+        createdAt: { type: string, format: date-time }
+
+    Member:
+      type: object
+      properties:
+        user: { $ref: '#/components/schemas/UserPublic' }
+        role: { $ref: '#/components/schemas/Role' }
+        source:
+          type: string
+          enum: [workspace, board, link]
+          description: Откуда взялась итоговая роль
+
+    BoardSummary:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        title: { type: string }
+        thumbnailUrl: { type: string, nullable: true }
+        owner: { $ref: '#/components/schemas/UserPublic' }
+        myRole: { $ref: '#/components/schemas/Role' }
+        favorite: { type: boolean }
+        onlineCount: { type: integer, description: 'из presence в Redis' }
+        updatedAt: { type: string, format: date-time }
+        lastOpenedAt: { type: string, format: date-time, nullable: true }
+        deletedAt: { type: string, format: date-time, nullable: true }
+        purgeAfter: { type: string, format: date-time, nullable: true }
+
+    Board:
+      allOf:
+        - $ref: '#/components/schemas/BoardSummary'
+        - type: object
+          properties:
+            workspaceId: { type: string, format: uuid }
+            status: { type: string, enum: [ready, copying, copy_failed] }
+            elementCount: { type: integer }
+            limits:
+              type: object
+              properties:
+                maxElements: { type: integer, example: 10000 }
+                maxFileBytes: { type: integer, example: 10485760 }
+            collab:
+              type: object
+              description: Куда подключаться по WebSocket
+              properties:
+                url: { type: string, example: 'wss://collab.example.com' }
+                namespace: { type: string, example: '/collab' }
+
+    ShareLink:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        role: { type: string, enum: [viewer, editor] }
+        createdBy: { $ref: '#/components/schemas/UserPublic' }
+        createdAt: { type: string, format: date-time }
+        expiresAt: { type: string, format: date-time, nullable: true }
+
+    Anchor:
+      oneOf:
+        - type: object
+          required: [type, elementId, x, y]
+          properties:
+            type: { type: string, enum: [element] }
+            elementId: { type: string }
+            x: { type: number }
+            y: { type: number }
+        - type: object
+          required: [type, x, y]
+          properties:
+            type: { type: string, enum: [point] }
+            x: { type: number }
+            y: { type: number }
+
+    Comment:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        author: { $ref: '#/components/schemas/UserPublic' }
+        body: { type: string }
+        mentions: { type: array, items: { type: string, format: uuid } }
+        createdAt: { type: string, format: date-time }
+        editedAt: { type: string, format: date-time, nullable: true }
+
+    Thread:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        anchor: { $ref: '#/components/schemas/Anchor' }
+        resolved: { type: boolean }
+        resolvedBy: { $ref: '#/components/schemas/UserPublic' }
+        comments:
+          type: array
+          items: { $ref: '#/components/schemas/Comment' }
+        createdAt: { type: string, format: date-time }
+
+    Version:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        kind: { type: string, enum: [auto, named, pre_restore, pre_ai] }
+        name: { type: string, nullable: true }
+        elementCount: { type: integer }
+        createdBy: { $ref: '#/components/schemas/UserPublic' }
+        createdAt: { type: string, format: date-time }
+
+    File:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        status: { type: string, enum: [pending, processing, ready, failed] }
+        mime: { type: string }
+        width: { type: integer }
+        height: { type: integer }
+        previewUrl: { type: string, nullable: true }
+        originalUrl: { type: string, nullable: true }
+
+    AiRequest:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        kind: { type: string }
+        status: { type: string, enum: [queued, running, succeeded, failed, cancelled] }
+        error: { type: string, nullable: true }
+        suggestion: { $ref: '#/components/schemas/AiSuggestion' }
+        createdAt: { type: string, format: date-time }
+
+    AiSuggestion:
+      type: object
+      nullable: true
+      description: Черновик. Координаты относительны `anchor`. tempId → клиент заменит на свои uuid при применении
+      properties:
+        id: { type: string, format: uuid }
+        status: { type: string, enum: [pending, applied, rejected, expired] }
+        nodes:
+          type: array
+          items:
+            type: object
+            properties:
+              tempId: { type: string }
+              kind: { type: string, enum: [sticky, shape, text, frame] }
+              text: { type: string }
+              x: { type: number }
+              y: { type: number }
+              w: { type: number }
+              h: { type: number }
+              color: { type: string }
+              parentTempId: { type: string, nullable: true }
+        edges:
+          type: array
+          items:
+            type: object
+            properties:
+              from: { type: string }
+              to: { type: string }
+              label: { type: string, nullable: true }
+        summary: { type: string, nullable: true, description: 'для summarize' }
+
+    Notification:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        type: { type: string, enum: [board_invite, mention, reply, access_granted] }
+        payload: { type: object }
+        readAt: { type: string, format: date-time, nullable: true }
+        createdAt: { type: string, format: date-time }

@@ -29,3 +29,4 @@ pnpm dev:server   # только NestJS API, http://localhost:3001/api
 - `apps/web` — фронтенд: Next.js (TypeScript, App Router, Tailwind)
 - `apps/server` — API: NestJS 12 (ESM, Express, Zod, Vitest) — подробности в [apps/server/README.md](apps/server/README.md)
 - `packages/*` — общий код фронта и бэка (пока пусто)
+- `docs/system-design` — system design проекта: требования, архитектура (C4), API, модель данных, sequence-диаграммы, решения — начать с [docs/system-design/onboarding.md](docs/system-design/onboarding.md)

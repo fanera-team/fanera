@@ -1,0 +1,56 @@
+@startuml save-status
+' Индикатор связи и сохранения на странице доски. Источник — websocket.md §0 п.5, §2–4 (Р-32)
+skinparam shadowing false
+skinparam defaultFontName "Helvetica"
+skinparam defaultFontSize 13
+skinparam ArrowColor #555555
+skinparam ArrowFontSize 11
+skinparam ArrowFontColor #555555
+skinparam state {
+  BackgroundColor #E8EEF7
+  BorderColor #555555
+}
+skinparam note {
+  BackgroundColor #FFFDE7
+  BorderColor #C9B458
+}
+title Индикатор связи и сохранения
+
+state "Подключение" as Connecting : «подключаемся…»
+
+state "На связи" as Online #F7FBF7 {
+  state "Синхронизация" as Syncing : sync:step1
+  state "Сохранено" as Saved #E8F5E9 : «сохранено»
+  state "Сохраняется" as Saving : «сохраняется…»
+
+  [*] --> Syncing
+  Syncing --> Saved : догнали сервер
+  Saved --> Saving : своя правка
+  Saving --> Saved : doc:saved
+}
+
+state "Нет связи" as Offline #FFF8E1 : «нет связи — изменения\nхранятся в браузере»
+state "Только чтение" as ReadOnly #F3E5F5 : редактирование выключено
+state "Отключён" as Closed #FDECEA : экран с причиной
+
+[*] --> Connecting
+Connecting --> Online : connect
+Online --> Offline : disconnect
+Offline --> Connecting : переподключение\nсамо
+Online --> ReadOnly : стал viewer или\nсервер в деградации
+ReadOnly --> Online : снова можно\nредактировать
+Connecting --> Closed : connect_error
+Online --> Closed : board:kicked
+
+note bottom of Offline
+  Редактировать можно:
+  правки копятся в браузере
+  и уйдут после переподключения.
+end note
+
+note bottom of Closed
+  Сам не переподключается.
+  board:kicked может прийти
+  и из «Только чтение».
+end note
+@enduml

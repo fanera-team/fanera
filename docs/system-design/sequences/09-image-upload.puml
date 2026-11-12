@@ -1,0 +1,22 @@
+@startuml 09-image-upload
+!include _style.iuml
+title Загрузить картинку на доску
+
+actor "Браузер" as B
+participant "API" as API
+database "Хранилище\nфайлов (S3)" as S3
+participant "Воркер" as W
+
+B -> API : Хочу загрузить картинку $t("POST /boards/{id}/files")
+API --> B : Одноразовая ссылка для загрузки $t("presigned URL")
+B -> S3 : Файл напрямую, мимо нашего сервера
+B -> API : Загрузил $t("POST /files/{id}/complete")
+API -> W : Обработай $t("через очередь")
+W -> S3 : Взять файл, проверить, что это картинка,\nсделать уменьшенные копии
+W -> B : Картинка готова $t("file:ready по WebSocket")
+
+note over B, S3
+  Тяжёлые файлы не проходят через наш сервер:
+  браузер грузит их прямо в хранилище.
+end note
+@enduml

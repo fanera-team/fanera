@@ -1,0 +1,155 @@
+@startuml core-overview
+' Модель данных core: главные таблицы и смысловые поля, сгруппированные по областям.
+' Все колонки, индексы и служебные таблицы — в core.dbml (источник правды).
+skinparam shadowing false
+skinparam defaultFontName "Helvetica"
+skinparam defaultFontSize 12
+skinparam linetype ortho
+skinparam nodesep 45
+skinparam ranksep 55
+skinparam ArrowColor #666666
+skinparam class {
+  BackgroundColor #FFFFFF
+  BorderColor #555555
+  HeaderBackgroundColor #E8EEF7
+  AttributeFontSize 11
+}
+skinparam package {
+  BorderColor #AAAAAA
+  FontColor #444444
+  FontStyle bold
+}
+skinparam note {
+  BackgroundColor #FFFDE7
+  BorderColor #C9B458
+}
+hide circle
+hide empty methods
+hide empty fields
+
+title Модель данных core
+
+package "Доступ" #F7F9FC {
+  entity "users\n<size:10>пользователь</size>" as users {
+    id
+    --
+    email, name
+  }
+  entity "workspaces\n<size:10>воркспейс</size>" as ws {
+    id
+    --
+    name
+    owner_id
+  }
+  entity "workspace_members\n<size:10>участник воркспейса</size>" as wsm {
+    workspace_id, user_id
+    --
+    role: owner | editor | viewer
+  }
+  entity "board_members\n<size:10>явная роль на доске</size>" as bm {
+    board_id, user_id
+    --
+    role: owner | editor | viewer
+  }
+  entity "board_share_links\n<size:10>ссылка-приглашение</size>" as links {
+    id
+    --
+    board_id
+    role: editor | viewer
+    revoked_at
+  }
+  entity "board_link_members\n<size:10>кто вошёл по ссылке</size>" as blm {
+    link_id, user_id
+  }
+}
+
+package "Доски" #F7F9FC {
+  entity "boards\n<size:10>«паспорт» доски</size>" as boards {
+    id
+    --
+    workspace_id
+    title
+    status: ready | copying | …
+    deleted_at <size:10>корзина</size>
+  }
+  entity "collab.board_documents\n<size:10>содержимое доски (Yjs)</size>" as doc #EEEEEE {
+    board_id
+  }
+}
+
+package "Обсуждения" #F7F9FC {
+  entity "comment_threads\n<size:10>тред</size>" as threads {
+    id
+    --
+    board_id
+    element_id или x, y
+    resolved_at
+  }
+  entity "comments\n<size:10>комментарий</size>" as comments {
+    id
+    --
+    thread_id, author_id
+    body
+  }
+}
+
+package "Файлы и ИИ" #F7F9FC {
+  entity "files\n<size:10>картинка</size>" as files {
+    id
+    --
+    board_id
+    status: pending | ready | failed
+  }
+  entity "ai_requests\n<size:10>запрос к ИИ</size>" as ai {
+    id
+    --
+    board_id, user_id
+    status: queued | running | succeeded …
+  }
+  entity "ai_suggestions\n<size:10>черновик ИИ</size>" as sugg {
+    request_id
+    --
+    status: pending | applied | rejected
+  }
+}
+
+package "Уведомления" #F7F9FC {
+  entity "outbox\n<size:10>«надо уведомить»</size>" as outbox {
+    id
+    --
+    event_type
+    processed_at
+  }
+  entity "notifications\n<size:10>уведомление</size>" as notif {
+    id
+    --
+    user_id
+    type
+    read_at
+  }
+}
+
+users ||--o{ wsm
+ws ||--o{ wsm : участники
+ws ||--o{ boards : содержит
+boards ||--o{ bm : явные роли
+boards ||--o{ links : ссылки
+links ||--o{ blm : входы
+boards |o..|| doc : по board_id
+boards ||--o{ threads
+threads ||--o{ comments
+boards ||--o{ files
+boards ||--o{ ai
+ai ||--o| sugg
+outbox ||--o{ notif : создаёт
+users ||--o{ notif
+
+note as N1
+  Показаны только смысловые поля.
+  Все колонки — в <b>core.dbml</b>.
+
+  <b>Роль на доске</b> = самая сильная из
+  workspace_members, board_members
+  и ссылок, по которым человек вошёл.
+end note
+@enduml
