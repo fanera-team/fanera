@@ -7,11 +7,13 @@
     "dev:server": "pnpm --filter server dev",
     "build": "pnpm -r build",
     "lint": "pnpm -r lint",
-    "format": "pnpm -r format",
+    "format:server": "pnpm --filter server format",
     "test": "pnpm -r test",
-    "typecheck": "pnpm -r typecheck",
-    "test": "pnpm --filter web test",
-    "test:e2e": "pnpm --filter web test:e2e"
+    "typecheck": "pnpm --filter web exec next typegen && pnpm -r typecheck",
+    "test:web": "pnpm --filter web test",
+    "test:server": "pnpm --filter server test",
+    "test:e2e:web": "pnpm --filter web test:e2e",
+    "test:e2e:server": "pnpm --filter server test:e2e"
   },
   "packageManager": "pnpm@12.18.0"
 }

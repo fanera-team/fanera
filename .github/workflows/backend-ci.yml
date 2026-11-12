@@ -8,10 +8,30 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  backend-placeholder:
-    name: Backend placeholder (no checks)
+  server:
+    name: Server checks
     runs-on: ubuntu-latest
     steps:
-      - name: Hello World
-        run: echo "Hello World — backend is not merged into main yet; no backend checks ran."
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Lint
+        run: pnpm --filter server lint
+      - name: Typecheck
+        run: pnpm --filter server typecheck
+      - name: Unit tests
+        run: pnpm --filter server test
+      - name: E2E tests
+        run: pnpm --filter server test:e2e
+      - name: Build
+        run: pnpm --filter server build

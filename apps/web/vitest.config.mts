@@ -7,5 +7,7 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     exclude: [...configDefaults.exclude, 'e2e/**'],
+    // The frontend has no unit tests yet; keep the workspace test command usable.
+    passWithNoTests: true,
   },
 })
