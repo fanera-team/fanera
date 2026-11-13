@@ -3,10 +3,10 @@
 # Бот делает первый проход и НЕ заменяет аппрув человека.
 # Меняем этот файл через PR, как обычный код.
 
-language: "ru-RU"
+language: 'ru-RU'
 
 reviews:
-  profile: "chill" # меньше мелочных замечаний; "assertive" — строже
+  profile: 'chill' # меньше мелочных замечаний; "assertive" — строже
   request_changes_workflow: false # бот не блокирует мёрдж
   high_level_summary: true
   poem: false
@@ -15,28 +15,28 @@ reviews:
     enabled: true
     drafts: false # черновики не ревьюим
     base_branches:
-      - "main"
+      - 'main'
 
   path_filters:
-    - "!**/pnpm-lock.yaml"
-    - "!**/node_modules/**"
-    - "!**/dist/**"
-    - "!**/.next/**"
-    - "!**/coverage/**"
-    - "!**/*.generated.ts"
-    - "!**/generated/**" # Prisma-клиент, клиенты из Swagger и т. п.
-    - "!**/next-env.d.ts" # генерирует Next.js
-    - "!**/__snapshots__/**"
+    - '!**/pnpm-lock.yaml'
+    - '!**/node_modules/**'
+    - '!**/dist/**'
+    - '!**/.next/**'
+    - '!**/coverage/**'
+    - '!**/*.generated.ts'
+    - '!**/generated/**' # Prisma-клиент, клиенты из Swagger и т. п.
+    - '!**/next-env.d.ts' # генерирует Next.js
+    - '!**/__snapshots__/**'
 
   path_instructions:
-    - path: "**"
+    - path: '**'
       instructions: |
         Не комментируй форматирование и стиль — это делают ESLint и Prettier.
         Фокус: баги, безопасность, тесты, понятность кода.
         Команда учится: коротко объясняй, почему замечание важно.
         Если PR больше ~400 строк изменений — предложи разбить его.
 
-    - path: "apps/web/**"
+    - path: 'apps/web/**'
       instructions: |
         Vite + React + TypeScript, Feature-Sliced Design. Проверяй:
         - импорты только сверху вниз по слоям (app → pages → widgets → features → entities → shared);
@@ -48,7 +48,7 @@ reviews:
         - перемещение курсоров и частые события холста не должны вызывать ререндер всего дерева;
         - UI собирается из shadcn/Tailwind, без лишних кастомных стилей.
 
-    - path: "apps/server/**"
+    - path: 'apps/server/**'
       instructions: |
         NestJS, модульная и слоистая архитектура. Проверяй:
         - контроллер/гейтвей не содержит бизнес-логики, она в сервисах;
@@ -58,16 +58,16 @@ reviews:
         - входные DTO валидируются, эндпоинты описаны в Swagger;
         - секреты не попадают в код и логи.
 
-    - path: "packages/**"
+    - path: 'packages/**'
       instructions: |
         Общие типы, DTO и контракты сокет-событий. Любое изменение — потенциально
         ломающее для фронта и бэка: отмечай это явно.
 
-    - path: "**/*.{test,spec}.{ts,tsx}"
+    - path: '**/*.{test,spec}.{ts,tsx}'
       instructions: |
         Проверяй, что тест проверяет поведение, а не реализацию, и покрывает краевые случаи.
 
-    - path: ".github/workflows/**"
+    - path: '.github/workflows/**'
       instructions: |
         CI/CD: секреты только через GitHub Secrets, у джобов минимальные permissions.
 
