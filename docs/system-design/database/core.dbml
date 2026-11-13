@@ -1,0 +1,380 @@
+// PostgreSQL "core": пользователи, доступы, каталог досок, комментарии, уведомления, ИИ-запросы.
+// Открыть: https://dbdiagram.io (вставить содержимое файла).
+// Схема core в общем Postgres на одном VPS (при необходимости шардирование — по workspace_id).
+
+Project miro_core {
+  database_type: 'PostgreSQL'
+  Note: 'Core DB аналога Miro. Документы досок живут в отдельной БД collab (collab.dbml), связь по boards.id без FK между БД.'
+}
+
+Enum role {
+  owner
+  editor
+  viewer
+}
+
+Enum share_role {
+  editor
+  viewer
+}
+
+Enum anchor_type {
+  element   // привязка к элементу доски (element_id из Yjs-документа)
+  point     // привязка к точке холста (x, y)
+}
+
+Enum board_status {
+  ready         // обычная доска
+  copying       // заготовка: воркер копирует документ, версии и файлы
+  copy_failed   // копирование не удалось; доску можно удалить или повторить копирование
+  purging       // идёт окончательное удаление из корзины: restore и фоновые записи запрещены (deep-dive §16)
+}
+
+Enum file_status {
+  pending      // выдан presigned URL, файл ещё не загружен
+  processing   // загружен, воркер проверяет и делает превью
+  ready
+  failed
+}
+
+Enum ai_kind {
+  generate_diagram   // описание приложения -> блоки и связи
+  brainstorm         // тема -> идеи-стикеры
+  cluster            // сгруппировать выделенное
+  summarize          // резюме выделенного
+  expand             // предложить дополнения
+}
+
+Enum ai_status {
+  queued
+  running
+  succeeded
+  failed
+  cancelled
+}
+
+Enum suggestion_status {
+  pending    // показан пользователю как превью
+  applied    // клиент вставил в документ
+  rejected
+  expired    // не принят за 24 ч
+}
+
+Table users {
+  id uuid [pk]
+  email citext [unique, not null]
+  password_hash text [note: 'argon2id; null, если вход только через OAuth']
+  name varchar(100) [not null]
+  avatar_key text [note: 'ключ в S3']
+  locale varchar(10) [default: 'ru']
+  notification_settings jsonb [not null, default: '{}', note: '{"telegram": {"mention": true, "invite": true, "reply": true}}']
+  telegram_chat_id bigint [unique, note: 'заполняется после /start <token> в боте']
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+  deleted_at timestamptz
+}
+
+Table oauth_identities {
+  provider varchar(20) [not null, note: 'github | google']
+  provider_user_id text [not null]
+  user_id uuid [not null, ref: > users.id]
+  created_at timestamptz [not null, default: `now()`]
+  indexes {
+    (provider, provider_user_id) [pk]
+    user_id
+  }
+}
+
+Table refresh_sessions {
+  id uuid [pk]
+  user_id uuid [not null, ref: > users.id]
+  token_hash bytea [unique, not null, note: 'sha256 от refresh-токена; сам токен только в httpOnly cookie']
+  family_id uuid [not null, note: 'ротация: повторное использование старого токена -> отзываем всю семью (кража токена)']
+  user_agent text
+  ip inet
+  expires_at timestamptz [not null]
+  revoked_at timestamptz
+  created_at timestamptz [not null, default: `now()`]
+  indexes {
+    user_id
+    family_id
+  }
+}
+
+Table telegram_link_tokens {
+  token_hash bytea [pk]
+  user_id uuid [not null, ref: > users.id]
+  expires_at timestamptz [not null, note: '10 минут']
+  used_at timestamptz
+}
+
+Table workspaces {
+  id uuid [pk]
+  name varchar(100) [not null]
+  owner_id uuid [not null, ref: > users.id]
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+  deleted_at timestamptz
+}
+
+Table workspace_members {
+  workspace_id uuid [not null, ref: > workspaces.id]
+  user_id uuid [not null, ref: > users.id]
+  role role [not null, note: 'роль по умолчанию на все доски воркспейса']
+  invited_by uuid [ref: > users.id]
+  joined_at timestamptz [not null, default: `now()`]
+  indexes {
+    (workspace_id, user_id) [pk]
+    user_id
+  }
+}
+
+Table workspace_invites {
+  id uuid [pk]
+  workspace_id uuid [not null, ref: > workspaces.id]
+  email citext [not null]
+  role role [not null]
+  token_hash bytea [unique, not null]
+  invited_by uuid [not null, ref: > users.id]
+  expires_at timestamptz [not null, note: '7 дней']
+  accepted_at timestamptz
+  revoked_at timestamptz
+  created_at timestamptz [not null, default: `now()`]
+  indexes {
+    (workspace_id, email)
+  }
+}
+
+Table boards {
+  id uuid [pk]
+  workspace_id uuid [not null, ref: > workspaces.id]
+  title varchar(200) [not null]
+  owner_id uuid [not null, ref: > users.id]
+  thumbnail_key text [note: 'миниатюра для каталога, генерирует клиент при выходе с доски']
+  copied_from uuid
+  status board_status [not null, default: 'ready', note: 'жизненный цикл копирования — deep-dive §16']
+  element_count int [not null, default: 0, note: 'денормализация из collab, обновляет компакция; для лимитов и UI']
+  last_edited_at timestamptz
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+  deleted_at timestamptz [note: 'корзина (soft delete)']
+  deleted_by uuid [ref: > users.id]
+  purge_after timestamptz [note: 'deleted_at + 30 дней; repeatable-джоба удаляет окончательно']
+  indexes {
+    (workspace_id, updated_at) [name: 'boards_catalog_idx', note: 'WHERE deleted_at IS NULL, сортировка DESC']
+    (workspace_id, deleted_at) [name: 'boards_trash_idx', note: 'WHERE deleted_at IS NOT NULL']
+    title [type: gin, name: 'boards_title_trgm_idx', note: 'USING GIN (title gin_trgm_ops) — поиск ILIKE по подстроке']
+    owner_id
+    purge_after [note: 'WHERE purge_after IS NOT NULL']
+  }
+}
+
+Table board_members {
+  board_id uuid [not null]
+  user_id uuid [not null, ref: > users.id]
+  role role [not null, note: 'только ЯВНАЯ роль на доске; итоговая = max(роль в воркспейсе, эта роль, роли по активным ссылкам из board_link_members)']
+  granted_by uuid [ref: > users.id]
+  created_at timestamptz [not null, default: `now()`]
+  indexes {
+    (board_id, user_id) [pk]
+    user_id
+  }
+}
+
+Table board_link_members {
+  link_id uuid [not null]
+  user_id uuid [not null, ref: > users.id]
+  board_id uuid [not null, note: 'денормализация из ссылки: роль считается одним запросом по (board_id, user_id)']
+  created_at timestamptz [not null, default: `now()`]
+  Note: 'Кто по какой ссылке вошёл. Источников доступа может быть несколько (явная роль + одна или несколько ссылок), поэтому отдельная таблица, а не колонка в board_members. Роль по ссылке действует, пока у ссылки revoked_at IS NULL; expires_at закрывает только новые входы. Отзыв ссылки не трогает другие источники.'
+  indexes {
+    (link_id, user_id) [pk]
+    (board_id, user_id)
+  }
+}
+
+Table board_share_links {
+  id uuid [pk]
+  board_id uuid [not null]
+  token_hash bytea [unique, not null, note: 'sha256 от 128-битного случайного токена; в БД сам токен не лежит']
+  role share_role [not null]
+  created_by uuid [not null, ref: > users.id]
+  expires_at timestamptz
+  revoked_at timestamptz
+  created_at timestamptz [not null, default: `now()`]
+  indexes {
+    board_id
+  }
+}
+
+Table board_favorites {
+  user_id uuid [not null, ref: > users.id]
+  board_id uuid [not null]
+  created_at timestamptz [not null, default: `now()`]
+  indexes {
+    (user_id, board_id) [pk]
+  }
+}
+
+Table board_visits {
+  user_id uuid [not null, ref: > users.id]
+  board_id uuid [not null]
+  last_opened_at timestamptz [not null, note: 'UPSERT при открытии; фильтр «недавние»']
+  indexes {
+    (user_id, board_id) [pk]
+    (user_id, last_opened_at)
+  }
+}
+
+Table comment_threads {
+  id uuid [pk, note: 'генерирует клиент -> повторная отправка = ON CONFLICT DO NOTHING']
+  board_id uuid [not null]
+  anchor_type anchor_type [not null]
+  element_id text [note: 'id элемента из Yjs-документа (без FK: элемент живёт в CRDT)']
+  x double [not null, note: 'для element — последняя известная позиция: если элемент удалят, тред останется на этом месте']
+  y double [not null]
+  created_by uuid [not null, ref: > users.id]
+  resolved_at timestamptz
+  resolved_by uuid [ref: > users.id]
+  created_at timestamptz [not null, default: `now()`]
+  indexes {
+    (board_id, resolved_at)
+    (board_id, element_id)
+  }
+}
+
+Table comments {
+  id uuid [pk, note: 'генерирует клиент (идемпотентность)']
+  thread_id uuid [not null]
+  author_id uuid [not null, ref: > users.id]
+  body text [not null, note: '<= 5000 символов']
+  created_at timestamptz [not null, default: `now()`]
+  edited_at timestamptz
+  deleted_at timestamptz
+  indexes {
+    (thread_id, created_at)
+  }
+}
+
+Table comment_mentions {
+  comment_id uuid [not null]
+  user_id uuid [not null, ref: > users.id]
+  indexes {
+    (comment_id, user_id) [pk]
+  }
+}
+
+Table notifications {
+  id uuid [pk]
+  user_id uuid [not null, ref: > users.id]
+  type varchar(30) [not null, note: 'board_invite | mention | reply | access_granted']
+  payload jsonb [not null, note: '{boardId, threadId, actorId, ...}']
+  read_at timestamptz
+  outbox_id bigint [ref: > outbox.id, note: 'из какого события создано; UNIQUE (outbox_id, user_id) — повтор релэя не создаёт дубль']
+  telegram_required boolean [not null, default: false, note: 'у пользователя привязан TG и включён этот тип уведомлений']
+  telegram_sent_at timestamptz [note: 'защита от повторной отправки в TG при ретрае джобы; reconciler переставляет telegram_required AND telegram_sent_at IS NULL старше 5 мин']
+  created_at timestamptz [not null, default: `now()`]
+  indexes {
+    (user_id, created_at)
+    (user_id) [name: 'notifications_unread_idx', note: 'WHERE read_at IS NULL']
+    (outbox_id, user_id) [unique]
+    created_at [name: 'notifications_tg_pending_idx', note: 'WHERE telegram_required AND telegram_sent_at IS NULL']
+  }
+}
+
+Table outbox {
+  id bigserial [pk]
+  event_type varchar(50) [not null, note: 'comment.created | board.member_added | ...']
+  payload jsonb [not null]
+  created_at timestamptz [not null, default: `now()`]
+  processed_at timestamptz
+  attempts int [not null, default: 0]
+  Note: 'Пишется в ТОЙ ЖЕ транзакции, что и бизнес-изменение. Релэй (worker) читает необработанные (FOR UPDATE SKIP LOCKED) и в своей транзакции создаёт notifications и ставит processed_at. После коммита ставит в BullMQ только отправку в Telegram (jobId = tg-{notificationId}). processed_at = «уведомления в БД», а не «джоба в очереди» (deep-dive §16).'
+  indexes {
+    created_at [name: 'outbox_pending_idx', note: 'WHERE processed_at IS NULL']
+  }
+}
+
+Table files {
+  id uuid [pk]
+  owner_id uuid [not null, ref: > users.id]
+  board_id uuid [not null, note: 'файлы принадлежат доске: удаляются вместе с ней, копируются при копировании доски']
+  original_key text [not null]
+  preview_key text
+  thumb_key text
+  mime varchar(50) [not null, note: 'проверяется по magic bytes, а не по расширению']
+  size_bytes int [not null, note: '<= 10 МБ']
+  width int
+  height int
+  sha256 bytea
+  status file_status [not null, default: 'pending']
+  created_at timestamptz [not null, default: `now()`]
+  indexes {
+    board_id
+    (status, created_at) [note: 'чистка зависших pending']
+  }
+}
+
+Table ai_requests {
+  id uuid [pk]
+  board_id uuid [not null]
+  user_id uuid [not null, ref: > users.id]
+  kind ai_kind [not null]
+  prompt text [note: 'текст пользователя, <= 2000 символов']
+  selection_element_ids text[] [note: 'id выделенных элементов, <= 200']
+  idempotency_key text [note: 'из заголовка Idempotency-Key']
+  status ai_status [not null, default: 'queued']
+  run_id uuid [note: 'попытка BullMQ, которая сейчас владеет запросом; финальный переход проверяет его (deep-dive §16)']
+  model varchar(50)
+  input_tokens int
+  output_tokens int
+  error text
+  created_at timestamptz [not null, default: `now()`]
+  started_at timestamptz
+  finished_at timestamptz
+  indexes {
+    (user_id, idempotency_key) [unique]
+    (user_id, created_at)
+    (status, created_at) [note: 'reconciler: зависшие queued/running']
+  }
+}
+
+Table idempotency_keys {
+  user_id uuid [not null, ref: > users.id]
+  key uuid [not null, note: 'из заголовка Idempotency-Key']
+  operation varchar(50) [not null, note: 'board.create | workspace.create | invite.create | board.copy | version.restore | ...']
+  request_hash bytea [not null, note: 'sha256 от метода, пути с идентификаторами (например, boardId и versionId у version.restore) и тела запроса: тот же ключ с другим запросом -> 422 IDEMPOTENCY_KEY_REUSED. Одно тело недостаточно: у restore тела нет']
+  response_status int [note: 'заполняется в конце той же транзакции']
+  response_body jsonb
+  created_at timestamptz [not null, default: `now()`]
+  Note: 'INSERT первым действием в транзакции создания, ответ — в конце той же транзакции. Параллельный повтор ждёт на PK и получает сохранённый ответ; откат транзакции убирает и ключ. Чистка старше 24 ч — maintenance (deep-dive §8, Р-38). У ai_requests свой уникальный ключ (user_id, idempotency_key).'
+  indexes {
+    (user_id, key) [pk]
+    created_at
+  }
+}
+
+Table ai_suggestions {
+  id uuid [pk]
+  request_id uuid [not null, unique]
+  payload jsonb [not null, note: 'провалидированный zod-схемой результат: {nodes:[{tempId,kind,text,x,y,color}], edges:[{from,to,label}], groups:[...]}']
+  status suggestion_status [not null, default: 'pending']
+  decided_at timestamptz
+  created_at timestamptz [not null, default: `now()`]
+}
+
+// Внешние ключи с правилом удаления. Окончательное удаление доски (purging, deep-dive §16) удаляет строку boards последней:
+// всё, что принадлежит доске, уходит каскадом, а копии этой доски остаются и теряют только ссылку на источник.
+Ref: boards.copied_from > boards.id [delete: set null]
+Ref: board_members.board_id > boards.id [delete: cascade]
+Ref: board_link_members.board_id > boards.id [delete: cascade]
+Ref: board_link_members.link_id > board_share_links.id [delete: cascade]
+Ref: board_share_links.board_id > boards.id [delete: cascade]
+Ref: board_favorites.board_id > boards.id [delete: cascade]
+Ref: board_visits.board_id > boards.id [delete: cascade]
+Ref: comment_threads.board_id > boards.id [delete: cascade]
+Ref: comments.thread_id > comment_threads.id [delete: cascade]
+Ref: comment_mentions.comment_id > comments.id [delete: cascade]
+Ref: files.board_id > boards.id [delete: cascade]
+Ref: ai_requests.board_id > boards.id [delete: cascade]
+Ref: ai_requests.id - ai_suggestions.request_id [delete: cascade] // внешний ключ — ai_suggestions.request_id (в связи «-» DBML им делает второй столбец)

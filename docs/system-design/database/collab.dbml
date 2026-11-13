@@ -1,0 +1,62 @@
+// PostgreSQL "collab": содержимое досок (CRDT Yjs), лог правок, метаданные версий.
+// Открыть: https://dbdiagram.io
+// Write-heavy: постоянно пишется лог правок. Схема collab в общем Postgres на одном VPS. Ключ шардирования на будущее — board_id.
+// boards.id живёт в core DB: FK между БД нет, целостность обеспечивает приложение
+// (удаление доски из корзины -> джоба purge удаляет документ, лог и версии).
+
+Project miro_collab {
+  database_type: 'PostgreSQL'
+  Note: 'Все запросы идут по board_id. Сырые бинарные данные Yjs — bytea.'
+}
+
+Enum version_kind {
+  auto          // по таймеру (каждые 30 мин активности) или при уходе последнего участника
+  named         // пользователь нажал «Сохранить версию»
+  pre_restore   // автоматически перед восстановлением другой версии (чтобы восстановление можно было откатить)
+  pre_ai        // опционально: перед применением крупного ИИ-черновика
+}
+
+Table board_documents {
+  board_id uuid [pk]
+  state bytea [not null, note: 'Y.encodeStateAsUpdate(doc) — полный документ; TOAST сжимает ~2x']
+  state_vector bytea [not null, note: 'Y.encodeStateVector(doc) — что уже включено в снапшот']
+  last_compacted_at timestamptz [note: 'для метрики «отставание компакции». Загрузка документа = state + ВСЕ оставшиеся строки board_updates этой доски ОДНИМ снимком (read-only REPEATABLE READ или один SQL): иначе компакция между двумя SELECT потеряет влитые строки (deep-dive §7). Компакция удаляет ровно те строки, которые влила; повторное применение безопасно — CRDT идемпотентен']
+  element_count int [not null, default: 0]
+  size_bytes int [not null, default: 0, note: 'для лимита 10 МБ и метрик']
+  updated_at timestamptz [not null, default: `now()`]
+}
+
+Table board_updates {
+  board_id uuid [not null]
+  seq bigserial [not null, note: 'глобальная последовательность: только чтобы адресовать строки при удалении после компакции. Порядок применения не важен (Yjs), а «seq > N» для загрузки НЕ используем — транзакции коммитятся не в порядке seq (см. deep-dive §7)']
+  update bytea [not null, note: 'Y.mergeUpdates(пачка за ~1 с от клиентов этого инстанса)']
+  update_hash bytea [not null, note: 'sha256(update): INSERT ... ON CONFLICT DO NOTHING — ретрай записи ТОЙ ЖЕ пачки не создаёт дубль. Повторную правку клиента хеш не ловит (она в другой пачке): полные повторы сервер отсекает до буфера']
+  instance_id varchar(50) [not null, note: 'какой collab-инстанс записал (отладка)']
+  user_ids uuid[] [note: 'авторы правок в пачке (аудит, «кто менял»)']
+  created_at timestamptz [not null, default: `now()`]
+  Note: 'Горячий буфер: строки живут секунды–минуты до компакции. PARTITION BY HASH (board_id) на 16 партиций — репетиция шардирования; агрессивный autovacuum (таблица «очередь»). Альтернатива — Redis Streams (см. deep-dive §7).'
+  indexes {
+    (board_id, seq) [pk]
+    (board_id, update_hash) [unique]
+  }
+}
+
+Table board_versions {
+  id uuid [pk]
+  board_id uuid [not null]
+  kind version_kind [not null]
+  name varchar(200) [note: 'для named']
+  snapshot_key text [not null, note: 'S3: versions/{board_id}/{id}.bin — Y.encodeStateAsUpdate на момент версии']
+  size_bytes int [not null]
+  element_count int [not null]
+  created_by uuid [note: 'null для auto']
+  restored_from uuid [ref: > board_versions.id, note: 'для pre_restore: какую версию восстанавливали']
+  restore_request_id uuid [unique, note: 'для pre_restore: id запроса восстановления — повтор джобы не создаёт вторую версию']
+  restore_applied_at timestamptz [note: 'для pre_restore: восстановление записано в board_updates (в той же транзакции) — повтор джобы просто выходит']
+  keep_forever boolean [not null, default: false, note: 'named и pre_restore не прореживаются']
+  created_at timestamptz [not null, default: `now()`]
+  indexes {
+    (board_id, created_at) [note: 'список версий, сортировка DESC']
+    (keep_forever, created_at) [note: 'джоба прореживания: auto старше 30 дней -> 1 в день']
+  }
+}

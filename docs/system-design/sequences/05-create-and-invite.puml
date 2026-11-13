@@ -1,0 +1,25 @@
+@startuml 05-create-and-invite
+!include _style.iuml
+title Создать доску и пригласить коллегу
+
+actor "Автор" as A
+participant "API" as API
+database "База" as DB
+actor "Коллега" as G
+participant "Воркер\n(фоновые задачи)" as W
+
+A -> API : Создай доску $t("POST /workspaces/{id}/boards")
+API -> DB : Сохранить доску
+API --> A : Готово
+
+A -> API : Дай ссылку-приглашение $t("POST /boards/{id}/share-links")
+API --> A : Ссылка
+A -> G : Ссылка (в мессенджере, вне системы)
+
+G -> API : Принимаю приглашение $t("POST /share-links/{token}/join")
+API -> DB : Добавить коллегу в участники\n+ запись «надо уведомить автора»
+API --> G : Открывай доску
+
+W -> DB : Есть кого уведомить?
+W -> A : Коллега присоединился $t("в приложении и Telegram")
+@enduml

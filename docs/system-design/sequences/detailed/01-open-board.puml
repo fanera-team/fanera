@@ -1,0 +1,49 @@
+@startuml 01-open-board
+!include ../_style.iuml
+title Открытие доски: handshake, загрузка документа, первичная синхронизация\n(websocket.md §1, §4.1 · deep-dive §4, §7)
+
+actor "Браузер" as C
+participant "LB\n(hash boardId)" as LB
+participant "collab-инстанс" as COL
+database "PG core" as CORE
+queue "Redis realtime" as R
+database "PG collab" as PG
+
+C -> LB : WSS /collab?boardId=…\nauth: {token, protocolVersion}
+LB -> COL : тот же инстанс для всех участников доски (affinity)
+activate COL
+group middleware io.use
+  COL -> COL : проверить JWT → socket.data.userId
+  COL -> COL : protocolVersion ≥ минимальной? проверить 
+  COL -> CORE : PermissionService.getRole(userId, boardId)\n(через кэш в Redis)
+  CORE --> COL : role = max(workspace, board, links)
+  COL -> COL : лимиты: ≤ 100 редакторов, ≤ 300 зрителей;\nboards.status ≠ copying
+end
+
+alt нет доступа / доска полна / клиент устарел
+  COL --> C : connect_error {code: NOT_FOUND | BOARD_FULL |\nBOARD_NOT_READY | UPGRADE_REQUIRED}
+else доступ есть
+  COL -> COL : socket.join(board:{id}, user:{uid}, board:{id}:user:{uid})
+
+  opt Y.Doc этой доски ещё не открыт на инстансе
+    COL -> R : SUBSCRIBE collab:doc:{boardId}\n(копим правки соседей, пока читаем БД)
+    COL -> PG : BEGIN READ ONLY ISOLATION LEVEL REPEATABLE READ
+    COL -> PG : SELECT state FROM board_documents
+    COL -> PG : SELECT update FROM board_updates (все оставшиеся)
+    PG --> COL : снапшот + хвост лога одним снимком
+    COL -> COL : Y.applyUpdate(snapshot), затем каждый update,\nзатем накопленные из collab:doc
+  end
+
+  COL --> C : presence:snapshot {users}
+  C -> COL : sync:step1 {stateVector клиента}
+  COL --> C : ack {update = encodeStateAsUpdate(doc, clientSV),\nstateVector сервера}
+  note right of C : типичная доска ~100 КБ;\nдокумент до 10 МБ приходит одним ack
+
+  opt у клиента есть то, чего нет у сервера (офлайн-правки)
+    C -> COL : doc:update {update}
+  end
+end
+
+== дальше doc:update и awareness:update идут в обе стороны ==
+deactivate COL
+@enduml

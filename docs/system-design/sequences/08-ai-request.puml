@@ -1,0 +1,23 @@
+@startuml 08-ai-request
+!include _style.iuml
+title ИИ рисует схему по запросу
+
+actor "Редактор" as U
+participant "API" as API
+participant "Воркер" as W
+participant "LLM" as LLM
+
+U -> API : Нарисуй архитектуру интернет-магазина $t("POST /boards/{id}/ai/requests")
+API --> U : Принято, ждите $t("202")
+API -> W : Задача $t("через очередь")
+W -> LLM : Промпт
+LLM --> W : Ответ в JSON
+W -> W : Проверить ответ, разложить блоки по холсту
+W -> U : Готово $t("ai:done по WebSocket")
+U -> U : Видит превью поверх доски.\n«Применить» → блоки добавляются обычной правкой
+
+note over U, LLM
+  LLM отвечает 10–30 с, поэтому работает воркер в фоне,
+  а API отвечает сразу и не держит соединение.
+end note
+@enduml

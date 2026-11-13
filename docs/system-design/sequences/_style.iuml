@@ -1,0 +1,32 @@
+' Общий стиль sequence-диаграмм. Подключается через !include _style.iuml
+skinparam shadowing false
+skinparam defaultFontName "Helvetica"
+skinparam defaultFontSize 13
+skinparam sequenceMessageAlign left
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 380
+skinparam sequence {
+  ArrowColor #444444
+  LifeLineBorderColor #999999
+  ParticipantBorderColor #555555
+  ParticipantBackgroundColor #E8EEF7
+  ActorBorderColor #555555
+  ActorBackgroundColor #E8EEF7
+  DatabaseBorderColor #555555
+  DatabaseBackgroundColor #FFF8E1
+  QueueBorderColor #555555
+  QueueBackgroundColor #FDECEA
+  GroupBorderColor #888888
+  GroupBackgroundColor #F5F5F5
+  DividerBackgroundColor #EEEEEE
+}
+skinparam note {
+  BackgroundColor #FFFDE7
+  BorderColor #C9B458
+}
+autonumber "<b>0."
+
+' Техническое имя (событие, эндпоинт) мелким серым под человеческой подписью: "Правка" + $t("doc:update")
+!function $t($x)
+!return "\n<size:11><color:#777777>" + $x + "</color></size>"
+!endfunction
