@@ -1,0 +1,44 @@
+@startuml overview
+' Обзор для первого знакомства. Подробно — C4: context.puml, containers.puml
+skinparam shadowing false
+skinparam defaultFontName "Helvetica"
+skinparam defaultFontSize 13
+skinparam ArrowColor #444444
+skinparam rectangle {
+  BackgroundColor #E8EEF7
+  BorderColor #555555
+  RoundCorner 12
+}
+skinparam database {
+  BackgroundColor #FFF8E1
+  BorderColor #555555
+}
+skinparam queue {
+  BackgroundColor #FDECEA
+  BorderColor #555555
+}
+left to right direction
+title Общая картина: из чего состоит система
+
+actor "Пользователь" as U
+rectangle "Браузер\n<size:11>React (Vite) + копия доски (Yjs)</size>" as WEB
+
+rectangle "API\n<size:11>обычные запросы: вход, список досок,</size>\n<size:11>права, комментарии</size>" as API
+rectangle "Сервер совместной работы (collab)\n<size:11>доска в реальном времени:</size>\n<size:11>правки, курсоры</size>" as COL
+rectangle "Воркер\n<size:11>долгие задачи в фоне:</size>\n<size:11>ИИ, картинки, уведомления</size>" as W
+
+database "PostgreSQL\n<size:11>пользователи, доски, права,</size>\n<size:11>содержимое досок</size>" as PG
+queue "Redis\n<size:11>шина событий между серверами</size>\n<size:11>и очередь задач</size>" as R
+database "S3\n<size:11>картинки и версии досок</size>" as S3
+
+U --> WEB
+WEB --> API : HTTPS (REST)
+WEB --> COL : WebSocket (socket.io)
+API --> PG
+COL --> PG
+API --> R : кладёт задачи
+R --> W : отдаёт задачи
+COL --> R : события между\nсерверами
+W --> PG
+W --> S3
+@enduml

@@ -1,0 +1,72 @@
+@startuml save-status
+' Индикатор связи и сохранения на странице доски. Источник — websocket.md §0 п.5, §2–4 (Р-32)
+skinparam shadowing false
+skinparam defaultFontName "Helvetica"
+skinparam defaultFontSize 13
+skinparam ArrowColor #555555
+skinparam ArrowFontSize 11
+skinparam ArrowFontColor #555555
+skinparam state {
+  BackgroundColor #E8EEF7
+  BorderColor #555555
+}
+skinparam note {
+  BackgroundColor #FFFDE7
+  BorderColor #C9B458
+}
+title Индикатор связи и сохранения
+
+state "Подключение" as Connecting : «подключаемся…»
+
+state "На связи" as Online #F7FBF7 {
+  state "Синхронизация" as Syncing : sync:step1
+  state "Сохранено" as Saved #E8F5E9 : «сохранено»
+  state "Сохраняется" as Saving : «сохраняется…»
+
+  [*] --> Syncing
+  Syncing --> Saving : ответ sync:step1 {n};\nдослали офлайн-правки и очередь
+  Saved --> Saving : своя правка
+  Saving --> Saving : doc:saved {upTo} < n\nпоследнего полученного номера
+  Saving --> Saved : doc:saved {upTo} ≥ n последнего\nполученного номера и очередь пуста
+  Saving --> Syncing : «сохраняется» > 30 с\nпри пустой очереди:\nповторить sync:step1
+}
+
+note right of Online
+  «Сохранено» — только по doc:saved
+  (websocket.md §3), в том числе
+  сразу после подключения: номер n
+  выдаёт и ответ на sync:step1.
+  Совпадение state vector ничего
+  не значит: сервер мог ещё не
+  записать правку в БД.
+  Правка в очереди или без ack
+  ещё не получила n.
+end note
+
+state "Нет связи" as Offline #FFF8E1 : «нет связи — изменения\nхранятся в браузере»
+state "Только чтение" as ReadOnly #F3E5F5 : редактирование выключено
+state "Отключён" as Closed #FDECEA : экран с причиной
+
+[*] --> Connecting
+Connecting --> Online : connect
+Online --> Offline : disconnect
+Offline --> Connecting : переподключение\nсамо
+Online --> ReadOnly : стал viewer или\nсервер в деградации
+ReadOnly --> Online : снова можно\nредактировать
+Connecting --> Closed : connect_error
+Online --> Closed : board:kicked
+ReadOnly --> Offline : disconnect
+ReadOnly --> Closed : board:kicked
+
+note bottom of Offline
+  Редактировать можно, если последняя
+  известная роль — editor+ (viewer
+  и после разрыва только смотрит):
+  правки копятся в браузере
+  и уйдут после переподключения.
+end note
+
+note bottom of Closed
+  Сам не переподключается.
+end note
+@enduml

@@ -1,0 +1,76 @@
+@startuml board-document
+' Модель содержимого доски внутри Y.Doc. Источник правды — database/README.md §2 и glossary.md
+skinparam shadowing false
+skinparam defaultFontName "Helvetica"
+skinparam defaultFontSize 13
+skinparam ArrowColor #555555
+skinparam class {
+  BackgroundColor #FFFFFF
+  BorderColor #555555
+  HeaderBackgroundColor #E8EEF7
+}
+hide circle
+hide empty methods
+hide empty fields
+title Что внутри документа доски (Y.Doc)
+
+class "Y.Doc" as Doc {
+  elements : Y.Map<elementId, Element>
+  meta : Y.Map
+}
+note right of Doc
+  Это не таблица БД: весь документ хранится одним
+  бинарным блобом в board_documents.state.
+  meta — schemaVersion, фон, настройки сетки.
+end note
+
+class "Element" as El {
+  id : uuid  <size:11><color:#777777>генерирует клиент</color></size>
+  type : ElementType
+  x, y, w, h, rotation : number
+  z : string  <size:11><color:#777777>порядок слоёв: a0, a0V …</color></size>
+  parentId? : uuid  <size:11><color:#777777>группа или фрейм</color></size>
+  style : { fill, stroke, fontSize, … }
+  text? : Y.Text  <size:11><color:#777777>текст, сливается посимвольно</color></size>
+  createdBy : userId
+  updatedAt : number
+}
+
+class "sticky" as Sticky
+class "text" as Text
+class "shape" as Shape
+class "image" as Image {
+  fileId : uuid
+}
+class "connector" as Conn {
+  from : { elementId, anchor }
+  to : { elementId, anchor }
+}
+class "group" as Group
+class "frame" as Frame
+
+class "files\n<size:11>(таблица в core)</size>" as Files #FFF8E1
+
+Doc *-- "0..*" El : elements
+El <|-- Sticky
+El <|-- Text
+El <|-- Shape
+El <|-- Image
+El <|-- Conn
+El <|-- Group
+El <|-- Frame
+
+Conn --> El : from / to\n(ссылка, не координаты)
+El --> Group : parentId
+El --> Frame : parentId
+Image ..> Files : fileId
+
+note bottom of Conn
+  Стрелка хранит id элементов на концах,
+  поэтому едет вместе со стикером сама.
+end note
+note bottom of Group
+  Группа — логическое объединение без рамки.
+  Фрейм — видимая область на холсте.
+end note
+@enduml

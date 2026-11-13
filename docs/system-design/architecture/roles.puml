@@ -1,0 +1,35 @@
+@startuml roles
+' Как считается роль пользователя на доске. Подробно — deep-dive.md §6, §16 (Р-14, Р-42)
+skinparam shadowing false
+skinparam defaultFontName "Helvetica"
+skinparam defaultFontSize 13
+skinparam ArrowColor #444444
+skinparam rectangle {
+  BackgroundColor #E8EEF7
+  BorderColor #555555
+  RoundCorner 12
+}
+left to right direction
+title Откуда у человека роль на доске
+
+rectangle "Роль в воркспейсе\n<size:11>workspace_members.role</size>" as WS
+rectangle "Явная роль на доске\n<size:11>board_members.role</size>" as BM
+rectangle "Роли по ссылкам\n<size:11>board_link_members → board_share_links.role</size>\n<size:11>(только неотозванные ссылки)</size>" as LK
+
+rectangle "PermissionService.getRole()\n<b>max(всех источников)</b>\n<size:11>owner > editor > viewer > нет доступа</size>" as PS #FFF8E1
+
+rectangle "HTTP guard\n<size:11>каждый REST-запрос</size>" as HG
+rectangle "WS guard\n<size:11>при подключении к доске</size>\n<size:11>и на каждом пишущем событии</size>" as WG
+
+WS --> PS
+BM --> PS
+LK --> PS
+PS --> HG
+PS --> WG
+
+note bottom of PS
+  Одна функция на весь бэкенд, покрыта тестом-таблицей.
+  Следствие: убрали человека из участников доски,
+  но он есть в воркспейсе — доступ остаётся.
+end note
+@enduml

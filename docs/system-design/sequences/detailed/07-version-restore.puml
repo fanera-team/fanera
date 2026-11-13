@@ -1,0 +1,65 @@
+@startuml 07-version-restore
+!include ../_style.iuml
+title Восстановление версии, пока на доске работают люди (Р-37)\n(architecture/README §3.3 · deep-dive §5)
+
+actor "Редактор" as U
+participant "api" as API
+queue "Redis queue" as Q
+participant "worker" as W
+participant "LB\n(внутренний listener,\nhash boardId)" as LB
+participant "collab-инстанс\nс документом" as COL
+database "PG collab" as PG
+database "S3" as S3
+queue "Redis realtime" as R
+actor "Другие участники" as O
+
+U -> API : POST /versions/{v}/restore\nIdempotency-Key
+API -> Q : add job restore-{requestId}
+API --> U : 202
+
+Q -> W : job restore-{requestId}
+W -> LB : внутренний вызов restore(boardId, v, requestId)
+LB -> COL : тот же инстанс, что держит WebSocket доски
+activate COL
+opt документ нигде не открыт
+  COL -> PG : загрузить документ (DocumentLoader)
+end
+COL -> PG : BEGIN; pg_try_advisory_xact_lock(boardId)
+alt lock не взят
+  COL --> W : 409 — восстановление уже идёт
+else lock взят
+  alt уже есть restore_applied_at для requestId (повтор джобы)
+    note right of COL : COMMIT мог пройти, а ответ потеряться:\nтогда живой doc R ещё не получил
+    COL -> PG : прочитать документ (DocumentLoader)
+    COL -> COL : Y.applyUpdate(doc, документ из БД) —\nприменится только недостающее (R, если его не было)
+    COL -> O : doc:update {недостающее}
+    COL -> R : PUBLISH collab:doc:{boardId}
+    COL -> O : version:restored {versionId, by, preRestoreVersionId}
+    COL -> U : version:restored
+    COL -> PG : COMMIT (lock снят)
+    COL --> W : 200 — повтор джобы завершён
+  else первый запуск
+  COL -> PG : сбросить буфер правок доски в board_updates
+  COL -> S3 : GET снапшот версии v
+  S3 --> COL : versionUpdate
+  COL -> COL : синхронно, без await:\npre = encodeStateAsUpdate(doc);\ndraft = копия из pre (свой clientID);\nR = restoreTo(draft, versionUpdate) — минимальная разница\n«текущее → старое» одной транзакцией Yjs
+  note right of COL : живой doc не тронут (Р-62):\nправки идут как обычно,\nsync:step1 отдаёт доску\nбез восстановления
+  COL -> S3 : PUT pre (уже захваченные байты)
+  COL -> PG : INSERT board_updates (пачка буфера: правки, принятые до снимка pre);\nINSERT board_versions (kind = pre_restore, restore_request_id);\nINSERT board_updates (R);\nrestore_applied_at; COMMIT (lock снят)
+  note right of PG : буфер отпускает эти правки только после COMMIT:\nR может зависеть от правки, пришедшей во время GET из S3
+  alt PUT или COMMIT упал
+    COL -> COL : выбросить draft. Живой doc, клиенты и журнал\nвосстановления не видели: никого не отключаем
+    COL --> W : 5xx — ретрай джобы BullMQ (с шага 1, новый pre);\nесли COMMIT на деле прошёл — ретрай пойдёт по ветке restore_applied_at
+  else записано
+    COL -> COL : Y.applyUpdate(doc, R) — только после COMMIT;\nсливается с правками, пришедшими за это время
+    COL -> O : doc:update {R}
+    COL -> R : PUBLISH collab:doc:{boardId}
+    COL -> O : version:restored {versionId, by, preRestoreVersionId}
+    COL -> U : version:restored
+    COL --> W : 200
+  end
+  end
+end
+deactivate COL
+note over U, O : никого не отключаем, в том числе при сбое записи; параллельные правки сливаются по правилам CRDT,\n«удаление побеждает правку» (Р-13): правка, пришедшая до применения R\nна удаляемый элемент, пропадёт. Откат = восстановить pre_restore
+@enduml

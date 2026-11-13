@@ -1,0 +1,59 @@
+@startuml 02-edit
+!include ../_style.iuml
+title Правка элемента: рассылка, запись пачкой, «принято» и «сохранено» (Р-32)\n(websocket.md §2, §4.2 · deep-dive §1, §4, §7, §17)
+
+actor "Клиент A" as A
+participant "collab-1" as C1
+actor "Клиент B\n(на collab-1)" as B
+queue "Redis realtime\n(adapter + collab:doc)" as R
+participant "collab-2" as C2
+actor "Клиент C\n(на collab-2)" as C
+database "PG collab" as PG
+
+A -> A : правка в локальном Y.Doc (стикер с собственным uuid),\nвидна сразу (оптимистичный UI)
+A -> C1 : doc:update {update} (emitWithAck)
+activate C1
+C1 -> C1 : role ≥ editor? размер ≤ 1 МБ? rate ≤ 30/с?
+alt нарушение
+  C1 --> A : ack {ok:false, code: FORBIDDEN | TOO_LARGE | RATE_LIMITED}
+else ок
+  C1 -> C1 : Y.applyUpdate(serverDoc, update)
+  alt полный повтор: state vector и удаления те же,\npending не вырос
+
+    C1 --> A : ack {ok:true, n = mark} — без рассылки и записи:\nуже записан при первом применении (Р-61);\ndoc:saved по n — после ближайшей пачки
+  else документ изменился или update ждёт зависимость (pending)
+    C1 -> C1 : проверить изменённые элементы по схеме,\nциклы, лимит элементов (§17)
+    C1 -> B : doc:update {update}
+    C1 -> R : adapter: emit в room board:{id}
+    R -> C2 : (доставка через Redis)
+    C2 -> C : doc:update {update}
+    C1 -> R : PUBLISH collab:doc:{boardId} {update}
+    R -> C2 : серверная копия Y.Doc на collab-2 применяет правку
+    C2 -> C2 : проверить изменённое (§17) и поставить\nв свой буфер записи (Р-61): если collab-1 упадёт\nдо записи, правка не пропадёт
+    C1 -> C1 : буфер записи: n = номер правки на сокете
+    alt правка невалидна
+      C1 -> C1 : починка — своя правка (origin server-repair)
+      C1 -> A : doc:update {repair} (починка — всем, включая автора)
+      C1 -> B : doc:update {repair}
+      C1 -> R : adapter: emit repair в room board:{id}
+      R -> C2 : (доставка через Redis)
+      C2 -> C : doc:update {repair}
+      C1 -> R : PUBLISH collab:doc:{boardId} {repair}
+      R -> C2 : серверная копия на collab-2 применяет починку\nи тоже пишет её в свой буфер
+      C1 -> C1 : починка — в буфер записи
+      C1 --> A : ack {ok:false, n, code: INVALID_ELEMENT | ELEMENT_LIMIT}
+    else валидна
+      C1 --> A : ack {ok:true, n} — «принято»
+    end
+  end
+end
+deactivate C1
+
+... ≤ 1 с: flush буфера ...
+
+C1 -> C1 : Y.mergeUpdates(пачка), update_hash = sha256
+C1 -> PG : INSERT INTO board_updates …\nON CONFLICT (board_id, update_hash) DO NOTHING
+PG --> C1 : COMMIT
+C1 --> A : doc:saved {upTo: n} — «сохранено»
+note over A : UI: «сохраняется…» → «сохранено»;\nпри недоступной БД doc:saved не приходит
+@enduml
