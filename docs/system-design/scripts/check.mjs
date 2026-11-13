@@ -40,21 +40,27 @@ const lineOf = (text, index) => text.slice(0, index).split('\n').length;
     if (!id || cells.length < 7) return;
     tasks.set(id, { depsCell: cells[5], line: i + 1 });
   });
+  // { id, inRange }: inRange — номер получен разворачиванием диапазона «T2-01…T2-18»
   const expand = (cell) => {
     const out = [];
     for (const m of cell.matchAll(/(T\d+)-(\d+)(?:\s*(?:…|\.\.\.)\s*T\d+-(\d+))?/g)) {
       const [, prefix, from, to] = m;
       const end = to ?? from;
-      for (let n = Number(from); n <= Number(end); n++) out.push(`${prefix}-${String(n).padStart(from.length, '0')}`);
+      for (let n = Number(from); n <= Number(end); n++) {
+        const id = `${prefix}-${String(n).padStart(from.length, '0')}`;
+        // концы диапазона проверяем как обычные ссылки, внутренние номера — нет
+        out.push({ id, inRange: to !== undefined && n !== Number(from) && n !== Number(end) });
+      }
     }
     return out;
   };
   for (const [id, t] of tasks) {
-    t.deps = expand(t.depsCell);
-    for (const d of t.deps) {
-      if (d === id) fail(file, `строка ${t.line}: ${id} зависит от самой себя`);
-      // в диапазоне «T2-01…T2-18» могут быть пропуски номеров — их не считаем ошибкой
-      else if (!tasks.has(d) && !/…|\.\.\./.test(t.depsCell)) fail(file, `строка ${t.line}: ${id} зависит от несуществующей ${d}`);
+    const parsed = expand(t.depsCell);
+    t.deps = parsed.map((d) => d.id);
+    for (const d of parsed) {
+      if (d.id === id) fail(file, `строка ${t.line}: ${id} зависит от самой себя`);
+      // внутри диапазона «T2-01…T2-18» могут быть пропуски номеров — их не считаем ошибкой
+      else if (!tasks.has(d.id) && !d.inRange) fail(file, `строка ${t.line}: ${id} зависит от несуществующей ${d.id}`);
     }
   }
   const state = new Map();

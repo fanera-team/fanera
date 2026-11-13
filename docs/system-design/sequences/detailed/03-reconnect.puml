@@ -25,8 +25,8 @@ alt доступ отозван или доска удалена
   C -> C : «несохранённые изменения не применены»,\nпредложить экспорт в PNG
 else доступ есть
   C -> COL : sync:step1 {stateVector клиента}
-  COL --> C : ack {всё, что клиент пропустил, stateVector сервера}
-  C -> C : diff = encodeStateAsUpdate(localDoc, serverSV)
+  COL --> C : ack {всё, что клиент пропустил, stateVector сервера,\nn = mark: «всё, что сейчас в памяти»}
+  C -> C : diff = encodeStateAsUpdate(localDoc, serverSV)\n+ правки из очереди без ack (Р-64)
 
   alt diff ≤ 512 КБ
     C -> COL : doc:update {diff}
@@ -41,8 +41,13 @@ else доступ есть
     COL --> C : ack {ok:true, n}
     note right of COL : обрыв посреди передачи → собранное выбрасывается,\nпосле реконнекта новый diff и новый transferId
   end
-  COL --> C : doc:saved {upTo: n}
-  note over C, COL : состояния сошлись: CRDT не важен порядок и число пропущенных правок
+  COL --> C : doc:saved {upTo: n} — после записи пачки\n(сразу, если буфер пуст)
+  note over C, COL
+    Состояния сошлись: CRDT не важен порядок и число пропущенных правок.
+    «Сохранено» — только когда doc:saved догнал n из sync:step1 и номера досланного.
+    Пустой diff ещё не «сохранено»: правку мог держать в памяти этот инстанс,
+    получив её от упавшего соседа, — она в его буфере, но ещё не в БД (Р-61).
+  end note
 end
 deactivate COL
 @enduml

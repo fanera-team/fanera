@@ -24,18 +24,22 @@ state "На связи" as Online #F7FBF7 {
   state "Сохраняется" as Saving : «сохраняется…»
 
   [*] --> Syncing
-  Syncing --> Saved : догнали сервер,\nдосылать нечего
-  Syncing --> Saving : дослали офлайн-правки
+  Syncing --> Saving : ответ sync:step1 {n};\nдослали офлайн-правки и очередь
   Saved --> Saving : своя правка
-  Saving --> Saving : doc:saved {upTo} < n\nпоследней своей правки
-  Saving --> Saved : doc:saved {upTo} ≥ n последней\nсвоей правки и нет правок без ack
+  Saving --> Saving : doc:saved {upTo} < n\nпоследнего полученного номера
+  Saving --> Saved : doc:saved {upTo} ≥ n последнего\nполученного номера и очередь пуста
 }
 
 note right of Online
-  «Сохранено» — только когда записана
-  последняя своя правка (websocket.md §3).
-  Правка без ack ещё не получила n,
-  поэтому её doc:saved ещё впереди.
+  «Сохранено» — только по doc:saved
+  (websocket.md §3), в том числе
+  сразу после подключения: номер n
+  выдаёт и ответ на sync:step1.
+  Совпадение state vector ничего
+  не значит: сервер мог ещё не
+  записать правку в БД.
+  Правка в очереди или без ack
+  ещё не получила n.
 end note
 
 state "Нет связи" as Offline #FFF8E1 : «нет связи — изменения\nхранятся в браузере»

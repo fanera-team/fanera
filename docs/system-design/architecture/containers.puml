@@ -8,8 +8,8 @@ title Container: аналог Miro (1 000 DAU, один VPS)
 Person(user, "Пользователь", "браузер, desktop")
 
 System_Boundary(sys, "Один VPS, docker compose") {
-  Container(web, "Web App", "Next.js, Yjs", "каталог, холст, локальная копия доски")
-  Container(lb, "nginx", "nginx", "TLS, роутинг, привязка доски к процессу collab")
+  Container(web, "Web App (SPA)", "React + Vite, Yjs", "работает в браузере: каталог, холст, локальная копия доски. Сборку отдаёт nginx")
+  Container(lb, "nginx", "nginx", "TLS, статика фронтенда, роутинг, привязка доски к процессу collab")
 
   Container(api, "api ×2", "NestJS", "REST: вход, доски, права, комментарии, версии, файлы, ИИ")
   Container(collab, "collab ×2", "NestJS + socket.io", "доска в реальном времени: правки, курсоры, права на каждое событие")

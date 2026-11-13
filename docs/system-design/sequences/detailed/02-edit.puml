@@ -20,7 +20,7 @@ else ок
   C1 -> C1 : Y.applyUpdate(serverDoc, update)
   alt полный повтор: state vector и удаления те же,\npending не вырос
 
-    C1 --> A : ack {ok:true, n} — без рассылки и записи
+    C1 --> A : ack {ok:true, n = mark} — без рассылки и записи:\nуже записан при первом применении (Р-61);\ndoc:saved по n — после ближайшей пачки
   else документ изменился или update ждёт зависимость (pending)
     C1 -> C1 : проверить изменённые элементы по схеме,\nциклы, лимит элементов (§17)
     C1 -> B : doc:update {update}
@@ -29,6 +29,7 @@ else ок
     C2 -> C : doc:update {update}
     C1 -> R : PUBLISH collab:doc:{boardId} {update}
     R -> C2 : серверная копия Y.Doc на collab-2 применяет правку
+    C2 -> C2 : проверить изменённое (§17) и поставить\nв свой буфер записи (Р-61): если collab-1 упадёт\nдо записи, правка не пропадёт
     C1 -> C1 : буфер записи: n = номер правки на сокете
     alt правка невалидна
       C1 -> C1 : починка — своя правка (origin server-repair)
@@ -38,9 +39,9 @@ else ок
       R -> C2 : (доставка через Redis)
       C2 -> C : doc:update {repair}
       C1 -> R : PUBLISH collab:doc:{boardId} {repair}
-      R -> C2 : серверная копия на collab-2 применяет починку
-      C1 -> C1 : починка — в буфер записи\n(серверные правки пишет инстанс, который их сделал)
-      C1 --> A : ack {ok:false, n, code: INVALID_ELEMENT, elementIds}
+      R -> C2 : серверная копия на collab-2 применяет починку\nи тоже пишет её в свой буфер
+      C1 -> C1 : починка — в буфер записи
+      C1 --> A : ack {ok:false, n, code: INVALID_ELEMENT | ELEMENT_LIMIT}
     else валидна
       C1 --> A : ack {ok:true, n} — «принято»
     end

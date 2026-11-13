@@ -21,7 +21,7 @@ left to right direction
 title Общая картина: из чего состоит система
 
 actor "Пользователь" as U
-rectangle "Браузер\n<size:11>Next.js + копия доски (Yjs)</size>" as WEB
+rectangle "Браузер\n<size:11>React (Vite) + копия доски (Yjs)</size>" as WEB
 
 rectangle "API\n<size:11>обычные запросы: вход, список досок,</size>\n<size:11>права, комментарии</size>" as API
 rectangle "Сервер совместной работы (collab)\n<size:11>доска в реальном времени:</size>\n<size:11>правки, курсоры</size>" as COL
