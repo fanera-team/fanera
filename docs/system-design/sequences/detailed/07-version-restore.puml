@@ -28,19 +28,24 @@ COL -> PG : BEGIN; pg_try_advisory_xact_lock(boardId)
 alt lock не взят
   COL --> W : 409 — восстановление уже идёт
 else lock взят
-  opt уже есть restore_applied_at для requestId
-    COL --> W : 200 — повтор джобы, выходим
-  end
+  alt уже есть restore_applied_at для requestId (повтор джобы)
+    note right of COL : COMMIT мог пройти, а ответ потеряться:\nтогда живой doc R ещё не получил
+    COL -> PG : прочитать документ (DocumentLoader)
+    COL -> COL : Y.applyUpdate(doc, документ из БД) —\nприменится только недостающее (R, если его не было)
+    COL -> O : doc:update {недостающее}, version:restored
+    COL --> W : 200 — повтор джобы завершён
+  else первый запуск
   COL -> PG : сбросить буфер правок доски в board_updates
   COL -> S3 : GET снапшот версии v
   S3 --> COL : versionUpdate
   COL -> COL : синхронно, без await:\npre = encodeStateAsUpdate(doc);\ndraft = копия из pre (свой clientID);\nR = restoreTo(draft, versionUpdate) — минимальная разница\n«текущее → старое» одной транзакцией Yjs
   note right of COL : живой doc не тронут (Р-62):\nправки идут как обычно,\nsync:step1 отдаёт доску\nбез восстановления
   COL -> S3 : PUT pre (уже захваченные байты)
-  COL -> PG : INSERT board_versions (kind = pre_restore, restore_request_id);\nINSERT board_updates (R);\nrestore_applied_at; COMMIT (lock снят)
+  COL -> PG : INSERT board_updates (пачка буфера: правки, принятые до снимка pre);\nINSERT board_versions (kind = pre_restore, restore_request_id);\nINSERT board_updates (R);\nrestore_applied_at; COMMIT (lock снят)
+  note right of PG : буфер отпускает эти правки только после COMMIT:\nR может зависеть от правки, пришедшей во время GET из S3
   alt PUT или COMMIT упал
     COL -> COL : выбросить draft. Живой doc, клиенты и журнал\nвосстановления не видели: никого не отключаем
-    COL --> W : 5xx — ретрай джобы BullMQ (с шага 1, новый pre)
+    COL --> W : 5xx — ретрай джобы BullMQ (с шага 1, новый pre);\nесли COMMIT на деле прошёл — ретрай пойдёт по ветке restore_applied_at
   else записано
     COL -> COL : Y.applyUpdate(doc, R) — только после COMMIT;\nсливается с правками, пришедшими за это время
     COL -> O : doc:update {R}
@@ -48,6 +53,7 @@ else lock взят
     COL -> O : version:restored {versionId, by, preRestoreVersionId}
     COL -> U : version:restored
     COL --> W : 200
+  end
   end
 end
 deactivate COL

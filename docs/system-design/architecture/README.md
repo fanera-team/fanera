@@ -195,7 +195,7 @@ src/
 | | Как делаем |
 |---|---|
 | Окружение | один VPS: 4 vCPU, 8 ГБ RAM, NVMe от 200 ГБ; всё в `docker compose` ([database §3](../database/README.md#3-сервер)) |
-| Релиз | GitHub Actions: release-ветка → кнопка Release → образы в GHCR (сервер; nginx со сборкой фронтенда) → по SSH `docker compose pull && up -d`. Процессы обновляются по одному: сначала `worker`, потом `api`, потом `collab` с drain соединений |
+| Релиз | GitHub Actions: release-ветка → кнопка Release → образы в GHCR (сервер; nginx со сборкой фронтенда) → по SSH `docker compose pull && docker compose up -d`. Процессы обновляются по одному: сначала `worker`, потом `api`, потом `collab` с drain соединений |
 | Миграции | `prisma migrate deploy` отдельным шагом **до** выкатки кода; только обратно совместимые (expand → migrate → contract) |
 | Секреты | GitHub Secrets → env контейнеров, `.env` только локально |
 | Бэкапы | WAL-архив, дампы и `mc mirror --watch` бакетов MinIO во внешнее хранилище у другого провайдера ([database §6](../database/README.md#6-бэкапы)) |

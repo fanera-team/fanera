@@ -38,13 +38,19 @@ const lineOf = (text, index) => text.slice(0, index).split('\n').length;
     const cells = row.split('|').map((c) => c.trim());
     const id = cells[1]?.match(/^(T\d+-\d+)/)?.[1];
     if (!id || cells.length < 7) return;
+    // повтор id молча заменил бы первую строку и спрятал её ошибки
+    if (tasks.has(id)) return fail(file, `строки ${tasks.get(id).line} и ${i + 1}: задача ${id} описана дважды`);
     tasks.set(id, { depsCell: cells[5], line: i + 1 });
   });
   // { id, inRange }: inRange — номер получен разворачиванием диапазона «T2-01…T2-18»
-  const expand = (cell) => {
+  const expand = (cell, line) => {
     const out = [];
-    for (const m of cell.matchAll(/(T\d+)-(\d+)(?:\s*(?:…|\.\.\.)\s*T\d+-(\d+))?/g)) {
-      const [, prefix, from, to] = m;
+    for (const m of cell.matchAll(/(T\d+)-(\d+)(?:\s*(?:…|\.\.\.)\s*(T\d+)-(\d+))?/g)) {
+      const [, prefix, from, prefix2, to] = m;
+      if (to !== undefined && (prefix2 !== prefix || Number(to) < Number(from))) {
+        fail(file, `строка ${line}: диапазон ${m[0]} — разные этапы или обратный порядок`);
+        continue;
+      }
       const end = to ?? from;
       for (let n = Number(from); n <= Number(end); n++) {
         const id = `${prefix}-${String(n).padStart(from.length, '0')}`;
@@ -55,7 +61,7 @@ const lineOf = (text, index) => text.slice(0, index).split('\n').length;
     return out;
   };
   for (const [id, t] of tasks) {
-    const parsed = expand(t.depsCell);
+    const parsed = expand(t.depsCell, t.line);
     t.deps = parsed.map((d) => d.id);
     for (const d of parsed) {
       if (d.id === id) fail(file, `строка ${t.line}: ${id} зависит от самой себя`);

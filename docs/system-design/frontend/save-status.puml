@@ -28,6 +28,7 @@ state "На связи" as Online #F7FBF7 {
   Saved --> Saving : своя правка
   Saving --> Saving : doc:saved {upTo} < n\nпоследнего полученного номера
   Saving --> Saved : doc:saved {upTo} ≥ n последнего\nполученного номера и очередь пуста
+  Saving --> Syncing : «сохраняется» > 30 с\nпри пустой очереди:\nповторить sync:step1
 }
 
 note right of Online
@@ -54,6 +55,8 @@ Online --> ReadOnly : стал viewer или\nсервер в деградаци
 ReadOnly --> Online : снова можно\nредактировать
 Connecting --> Closed : connect_error
 Online --> Closed : board:kicked
+ReadOnly --> Offline : disconnect
+ReadOnly --> Closed : board:kicked
 
 note bottom of Offline
   Редактировать можно:
@@ -63,7 +66,5 @@ end note
 
 note bottom of Closed
   Сам не переподключается.
-  board:kicked может прийти
-  и из «Только чтение».
 end note
 @enduml

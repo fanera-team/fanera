@@ -151,7 +151,7 @@ Table boards {
   title varchar(200) [not null]
   owner_id uuid [not null, ref: > users.id]
   thumbnail_key text [note: 'миниатюра для каталога, генерирует клиент при выходе с доски']
-  copied_from uuid [ref: > boards.id]
+  copied_from uuid
   status board_status [not null, default: 'ready', note: 'жизненный цикл копирования — deep-dive §16']
   element_count int [not null, default: 0, note: 'денормализация из collab, обновляет компакция; для лимитов и UI']
   last_edited_at timestamptz
@@ -170,7 +170,7 @@ Table boards {
 }
 
 Table board_members {
-  board_id uuid [not null, ref: > boards.id]
+  board_id uuid [not null]
   user_id uuid [not null, ref: > users.id]
   role role [not null, note: 'только ЯВНАЯ роль на доске; итоговая = max(роль в воркспейсе, эта роль, роли по активным ссылкам из board_link_members)']
   granted_by uuid [ref: > users.id]
@@ -182,9 +182,9 @@ Table board_members {
 }
 
 Table board_link_members {
-  link_id uuid [not null, ref: > board_share_links.id]
+  link_id uuid [not null]
   user_id uuid [not null, ref: > users.id]
-  board_id uuid [not null, ref: > boards.id, note: 'денормализация из ссылки: роль считается одним запросом по (board_id, user_id)']
+  board_id uuid [not null, note: 'денормализация из ссылки: роль считается одним запросом по (board_id, user_id)']
   created_at timestamptz [not null, default: `now()`]
   Note: 'Кто по какой ссылке вошёл. Источников доступа может быть несколько (явная роль + одна или несколько ссылок), поэтому отдельная таблица, а не колонка в board_members. Роль по ссылке действует, пока у ссылки revoked_at IS NULL; expires_at закрывает только новые входы. Отзыв ссылки не трогает другие источники.'
   indexes {
@@ -195,7 +195,7 @@ Table board_link_members {
 
 Table board_share_links {
   id uuid [pk]
-  board_id uuid [not null, ref: > boards.id]
+  board_id uuid [not null]
   token_hash bytea [unique, not null, note: 'sha256 от 128-битного случайного токена; в БД сам токен не лежит']
   role share_role [not null]
   created_by uuid [not null, ref: > users.id]
@@ -209,7 +209,7 @@ Table board_share_links {
 
 Table board_favorites {
   user_id uuid [not null, ref: > users.id]
-  board_id uuid [not null, ref: > boards.id]
+  board_id uuid [not null]
   created_at timestamptz [not null, default: `now()`]
   indexes {
     (user_id, board_id) [pk]
@@ -218,7 +218,7 @@ Table board_favorites {
 
 Table board_visits {
   user_id uuid [not null, ref: > users.id]
-  board_id uuid [not null, ref: > boards.id]
+  board_id uuid [not null]
   last_opened_at timestamptz [not null, note: 'UPSERT при открытии; фильтр «недавние»']
   indexes {
     (user_id, board_id) [pk]
@@ -228,7 +228,7 @@ Table board_visits {
 
 Table comment_threads {
   id uuid [pk, note: 'генерирует клиент -> повторная отправка = ON CONFLICT DO NOTHING']
-  board_id uuid [not null, ref: > boards.id]
+  board_id uuid [not null]
   anchor_type anchor_type [not null]
   element_id text [note: 'id элемента из Yjs-документа (без FK: элемент живёт в CRDT)']
   x double [not null, note: 'для element — последняя известная позиция: если элемент удалят, тред останется на этом месте']
@@ -245,7 +245,7 @@ Table comment_threads {
 
 Table comments {
   id uuid [pk, note: 'генерирует клиент (идемпотентность)']
-  thread_id uuid [not null, ref: > comment_threads.id]
+  thread_id uuid [not null]
   author_id uuid [not null, ref: > users.id]
   body text [not null, note: '<= 5000 символов']
   created_at timestamptz [not null, default: `now()`]
@@ -257,7 +257,7 @@ Table comments {
 }
 
 Table comment_mentions {
-  comment_id uuid [not null, ref: > comments.id]
+  comment_id uuid [not null]
   user_id uuid [not null, ref: > users.id]
   indexes {
     (comment_id, user_id) [pk]
@@ -298,7 +298,7 @@ Table outbox {
 Table files {
   id uuid [pk]
   owner_id uuid [not null, ref: > users.id]
-  board_id uuid [not null, ref: > boards.id, note: 'файлы принадлежат доске: удаляются вместе с ней, копируются при копировании доски']
+  board_id uuid [not null, note: 'файлы принадлежат доске: удаляются вместе с ней, копируются при копировании доски']
   original_key text [not null]
   preview_key text
   thumb_key text
@@ -317,7 +317,7 @@ Table files {
 
 Table ai_requests {
   id uuid [pk]
-  board_id uuid [not null, ref: > boards.id]
+  board_id uuid [not null]
   user_id uuid [not null, ref: > users.id]
   kind ai_kind [not null]
   prompt text [note: 'текст пользователя, <= 2000 символов']
@@ -343,7 +343,7 @@ Table idempotency_keys {
   user_id uuid [not null, ref: > users.id]
   key uuid [not null, note: 'из заголовка Idempotency-Key']
   operation varchar(50) [not null, note: 'board.create | workspace.create | invite.create | board.copy | version.restore | ...']
-  request_hash bytea [not null, note: 'sha256 тела запроса: тот же ключ с другим телом -> 422 IDEMPOTENCY_KEY_REUSED']
+  request_hash bytea [not null, note: 'sha256 от метода, пути с идентификаторами (например, boardId и versionId у version.restore) и тела запроса: тот же ключ с другим запросом -> 422 IDEMPOTENCY_KEY_REUSED. Одно тело недостаточно: у restore тела нет']
   response_status int [note: 'заполняется в конце той же транзакции']
   response_body jsonb
   created_at timestamptz [not null, default: `now()`]
@@ -356,9 +356,25 @@ Table idempotency_keys {
 
 Table ai_suggestions {
   id uuid [pk]
-  request_id uuid [not null, unique, ref: - ai_requests.id]
+  request_id uuid [not null, unique]
   payload jsonb [not null, note: 'провалидированный zod-схемой результат: {nodes:[{tempId,kind,text,x,y,color}], edges:[{from,to,label}], groups:[...]}']
   status suggestion_status [not null, default: 'pending']
   decided_at timestamptz
   created_at timestamptz [not null, default: `now()`]
 }
+
+// Внешние ключи с правилом удаления. Окончательное удаление доски (purging, deep-dive §16) удаляет строку boards последней:
+// всё, что принадлежит доске, уходит каскадом, а копии этой доски остаются и теряют только ссылку на источник.
+Ref: boards.copied_from > boards.id [delete: set null]
+Ref: board_members.board_id > boards.id [delete: cascade]
+Ref: board_link_members.board_id > boards.id [delete: cascade]
+Ref: board_link_members.link_id > board_share_links.id [delete: cascade]
+Ref: board_share_links.board_id > boards.id [delete: cascade]
+Ref: board_favorites.board_id > boards.id [delete: cascade]
+Ref: board_visits.board_id > boards.id [delete: cascade]
+Ref: comment_threads.board_id > boards.id [delete: cascade]
+Ref: comments.thread_id > comment_threads.id [delete: cascade]
+Ref: comment_mentions.comment_id > comments.id [delete: cascade]
+Ref: files.board_id > boards.id [delete: cascade]
+Ref: ai_requests.board_id > boards.id [delete: cascade]
+Ref: ai_suggestions.request_id - ai_requests.id [delete: cascade]
