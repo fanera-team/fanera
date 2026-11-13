@@ -1,25 +1,23 @@
 # Fanera
 
-Монорепозиторий проекта Fanera.
+Monorepo на базе pnpm workspaces.
+
+## Структура
+
+- `apps/web` — клиентское приложение (React + Vite + TypeScript + Tailwind CSS)
+- `apps/server` — серверное приложение
+- `packages/*` — общие пакеты
 
 ## Требования
 
-- Node.js 22 — см. `.nvmrc`
-- pnpm 12.x
-
-## Установка
-
-```bash
-pnpm install
-cp apps/server/.env.example apps/server/.env
-```
+- Node.js v22 (версия указана в `.nvmrc`)
+- pnpm
 
 ## Запуск
 
 ```bash
-pnpm dev          # оба приложения сразу
-pnpm dev:web      # только Next.js, http://localhost:3000
-pnpm dev:server   # только NestJS API, http://localhost:3001/api
+pnpm install
+pnpm --filter web dev
 ```
 
 Проверки по всем приложениям: `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build`, `pnpm format`.
