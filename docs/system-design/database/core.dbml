@@ -377,4 +377,4 @@ Ref: comments.thread_id > comment_threads.id [delete: cascade]
 Ref: comment_mentions.comment_id > comments.id [delete: cascade]
 Ref: files.board_id > boards.id [delete: cascade]
 Ref: ai_requests.board_id > boards.id [delete: cascade]
-Ref: ai_suggestions.request_id - ai_requests.id [delete: cascade]
+Ref: ai_requests.id - ai_suggestions.request_id [delete: cascade] // внешний ключ — ai_suggestions.request_id (в связи «-» DBML им делает второй столбец)

@@ -59,7 +59,9 @@ ReadOnly --> Offline : disconnect
 ReadOnly --> Closed : board:kicked
 
 note bottom of Offline
-  Редактировать можно:
+  Редактировать можно, если последняя
+  известная роль — editor+ (viewer
+  и после разрыва только смотрит):
   правки копятся в браузере
   и уйдут после переподключения.
 end note

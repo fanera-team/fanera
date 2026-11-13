@@ -33,6 +33,7 @@ else lock взят
     COL -> PG : прочитать документ (DocumentLoader)
     COL -> COL : Y.applyUpdate(doc, документ из БД) —\nприменится только недостающее (R, если его не было)
     COL -> O : doc:update {недостающее}, version:restored
+    COL -> PG : COMMIT (lock снят)
     COL --> W : 200 — повтор джобы завершён
   else первый запуск
   COL -> PG : сбросить буфер правок доски в board_updates

@@ -39,7 +39,7 @@ else доступ есть
     end
     COL -> COL : целиком → обработка как doc:update
     COL --> C : ack {ok:true, n}
-    note right of COL : обрыв посреди передачи → собранное выбрасывается,\nпосле реконнекта новый diff и новый transferId
+    note right of COL : обрыв посреди передачи → собранное выбрасывается,\nпосле реконнекта новый diff и новый transferId.\nСобрано > 12 МБ → TOO_LARGE без повтора: клиент\nхранит правки в IndexedDB и предлагает экспорт
   end
   COL --> C : doc:saved {upTo: n} — после записи пачки\n(сразу, если буфер пуст)
   note over C, COL
