@@ -32,7 +32,10 @@ else lock взят
     note right of COL : COMMIT мог пройти, а ответ потеряться:\nтогда живой doc R ещё не получил
     COL -> PG : прочитать документ (DocumentLoader)
     COL -> COL : Y.applyUpdate(doc, документ из БД) —\nприменится только недостающее (R, если его не было)
-    COL -> O : doc:update {недостающее}, version:restored
+    COL -> O : doc:update {недостающее}
+    COL -> R : PUBLISH collab:doc:{boardId}
+    COL -> O : version:restored {versionId, by, preRestoreVersionId}
+    COL -> U : version:restored
     COL -> PG : COMMIT (lock снят)
     COL --> W : 200 — повтор джобы завершён
   else первый запуск

@@ -43,4 +43,6 @@
 | `board-copy` | jobId `copy-{requestId}` | последние 1000 | 2 | 3 |
 | `restore` | jobId `restore-{requestId}`; воркер вызывает collab-инстанс доски ([deep-dive §5](../deep-dive.md#5-восстановление-версии-пока-другие-работают)) | последние 1000 | 4 | 3 |
 | `notifications` | jobId `tg-{notificationId}`: только отправка в Telegram, in-app уведомления создаёт релэй сам (Р-41) | последние 1000 | rate limiter BullMQ: ≤ 25 сообщений/с (лимит Telegram ~30/с на бота) | 5, уважаем `retry_after` из ответа Telegram |
-| `maintenance` (repeatable) | имя расписания | 1 | — (следующий запуск по расписанию). Задачи: purge корзины (раз в час), прореживание версий (раз в сутки), reconciler зависших задач (ИИ, копирование, файлы в `processing`) и неотправленных в Telegram уведомлений (раз в минуту), чистка `pending`-файлов и `idempotency_keys` старше 24 ч |
+| `maintenance` (repeatable) | имя расписания | 1 | 1 | — (следующий запуск по расписанию) |
+
+Задачи `maintenance`: purge корзины (раз в час), прореживание версий (раз в сутки), reconciler зависших задач (ИИ, копирование, файлы в `processing`) и неотправленных в Telegram уведомлений (раз в минуту), чистка файлов в статусе `pending` и `idempotency_keys` старше 24 ч.
