@@ -9,6 +9,12 @@ export const envSchema = z.object({
     .url({ protocol: /^https?$/ })
     .default('http://localhost:3000')
     .transform((value) => new URL(value).origin),
+
+  // Postgres из docker-compose.yml; пример — в .env.example
+  DATABASE_URL: z.url({ protocol: /^postgres(ql)?$/ }),
+
+  // Redis из docker-compose.yml; rediss — вариант с TLS
+  REDIS_URL: z.url({ protocol: /^rediss?$/ }),
 });
 
 export type Env = z.infer<typeof envSchema>;

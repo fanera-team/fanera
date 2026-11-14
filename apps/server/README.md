@@ -5,10 +5,13 @@ API Fanera на NestJS 12 (ESM, Express, Zod, Vitest).
 ## Запуск
 
 ```bash
+docker compose up -d    # из корня репозитория: Postgres и Redis
 cp .env.example .env
 pnpm dev                # из корня: pnpm dev:server
 # -> http://localhost:3001/health
 ```
+
+Сервер стартует и без Postgres/Redis (в лог пишет предупреждение), но `/health` тогда отвечает `503` и показывает, что недоступно.
 
 Проверки: `pnpm lint`, `pnpm typecheck`, `pnpm test` (unit), `pnpm test:e2e` (e2e запускаются отдельно).
 Отладка: `pnpm start:debug`, затем в VS Code — «Attach to Node Process».
@@ -19,6 +22,8 @@ pnpm dev                # из корня: pnpm dev:server
 - `src/configure-app.ts` — всё, что настраивается на уровне приложения: префикс `/api`, helmet, CORS, глобальная валидация. Его же вызывают e2e-тесты, поэтому новые глобальные настройки добавляются сюда, а не в `main.ts`.
 - `src/config/env.schema.ts` — Zod-схема переменных окружения. Проверяется при старте: с некорректным `.env` сервер не запустится и напишет, что не так.
 - `src/app.module.ts` — корневой модуль, подключает модули фич.
+- `src/infra/` — подключения к внешним сервисам: `postgres/` (пул `pg`, до ORM из #32), `redis/` (`ioredis`).
+- `src/health/` — `GET /health`: пингует Postgres и Redis с таймаутом 2 с; `200` — всё доступно, `503` — нет.
 
 ## Как добавлять код
 

@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { envSchema } from './config/env.schema.js';
-import { HealthController } from './health.controller.js';
+import { HealthModule } from './health/health.module.js';
 
 @Module({
   imports: [
@@ -12,7 +12,7 @@ import { HealthController } from './health.controller.js';
       // .env + process.env проверяются схемой при старте.
       validationSchema: envSchema,
     }),
+    HealthModule,
   ],
-  controllers: [HealthController],
 })
 export class AppModule {}
