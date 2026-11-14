@@ -12,7 +12,11 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "pnpm -r test",
-    "typecheck": "pnpm -r typecheck"
+    "typecheck": "pnpm -r typecheck",
+    "test:web": "pnpm --filter web test",
+    "test:server": "pnpm --filter server test",
+    "test:e2e:web": "pnpm --filter web test:e2e",
+    "test:e2e:server": "pnpm --filter server test:e2e"
   },
   "devDependencies": {
     "@conarti/eslint-plugin-feature-sliced": "^2.0.1",
