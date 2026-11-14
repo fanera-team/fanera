@@ -159,6 +159,7 @@ pnpm format        # Prettier
 
 - Работа идёт через issues и PR в `main`. Ветки называются `тип/номер-issue-описание`, например `feature/7-nest-server`.
 - Коммиты и заголовки PR — по [Conventional Commits](https://www.conventionalcommits.org/ru/v1.0.0/): `тип(область): описание`, например `feat(server): каркас NestJS` или `docs: system design проекта`. Типы: `feat`, `fix`, `docs`, `chore`, `refactor`, `test`, `ci`.
+- Ревью каждого PR автоматически запрашивается у всей команды `@fanera-team/dev` (см. `.github/CODEOWNERS`), берёт тот, кто свободен.
 - PR ревьюит CodeRabbit (настройки в `.coderabbit.yaml`), но мёрдж только после аппрува человека.
 - PR лучше держать небольшими, до ~400 строк изменений.
 

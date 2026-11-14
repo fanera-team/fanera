@@ -126,6 +126,7 @@ dist
 
 # Stores Visual Studio Code versions used for testing Visual Studio Code extensions
 .vscode-test
+**/.vscode/*
 
 # pnpm
 .pnpm-store
@@ -143,6 +144,10 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
+
+# Playwright output
+apps/web/playwright-report/
+apps/web/test-results/
 
 # Astro generated types
 .astro/
