@@ -16,7 +16,8 @@
     "test:web": "pnpm --filter web test",
     "test:server": "pnpm --filter server test",
     "test:e2e:web": "pnpm --filter web test:e2e",
-    "test:e2e:server": "pnpm --filter server test:e2e"
+    "test:e2e:server": "pnpm --filter server test:e2e",
+    "storybook": "pnpm --filter web storybook"
   },
   "devDependencies": {
     "@conarti/eslint-plugin-feature-sliced": "^2.0.1",
