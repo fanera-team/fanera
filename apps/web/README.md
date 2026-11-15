@@ -71,3 +71,14 @@ export default defineConfig([
   },
 ])
 ```
+
+## Storybook
+
+Запуск из корня монорепозитория:
+
+```bash
+pnpm storybook
+```
+
+Stories для UI-компонентов размещаются рядом с компонентами в apps/web/src/shared/components/ui/.
+Используй шаблон имени `<component>.stories.tsx`, например button.stories.tsx.
