@@ -29,11 +29,11 @@ jobs:
         run: pnpm --filter web lint
       - name: Typecheck
         run: pnpm --filter web typecheck
+      - name: Install Chromium
+        run: pnpm --filter web exec playwright install --with-deps chromium
       - name: Unit tests
         run: pnpm --filter web test
       - name: Build
         run: pnpm --filter web build
-      - name: Install Chromium
-        run: pnpm --filter web exec playwright install --with-deps chromium
       - name: E2E tests
         run: pnpm --filter web test:e2e
