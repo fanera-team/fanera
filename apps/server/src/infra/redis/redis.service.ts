@@ -19,6 +19,8 @@ export class RedisService implements OnModuleInit, OnApplicationShutdown {
     this.client = new Redis(config.get('REDIS_URL', { infer: true }), {
       lazyConnect: true,
       connectTimeout: 2000,
+      // Ответ на команду ждём не дольше 2 с, даже если соединение зависло
+      commandTimeout: 2000,
       // Без очереди команды при недоступном Redis падают сразу, а не висят
       enableOfflineQueue: false,
       maxRetriesPerRequest: 1,

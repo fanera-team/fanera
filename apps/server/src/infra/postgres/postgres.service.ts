@@ -18,12 +18,13 @@ export class PostgresService implements OnModuleInit, OnApplicationShutdown {
     this.pool = new Pool({
       connectionString: config.get('DATABASE_URL', { infer: true }),
       connectionTimeoutMillis: 2000,
+      // connectionTimeoutMillis ограничивает только подключение; без этого
+      // запрос к зависшей базе висит вечно и держит соединение из пула
+      query_timeout: 2000,
     });
 
     this.pool.on('error', (err) => {
-      this.logger.warn(
-        `connection to postgres was lost: ${errorMessage(err)}`,
-      );
+      this.logger.warn(`connection to postgres was lost: ${errorMessage(err)}`);
     });
   }
 

@@ -4,10 +4,12 @@ API Fanera на NestJS 12 (ESM, Express, Zod, Vitest).
 
 ## Запуск
 
+Из корня репозитория:
+
 ```bash
-docker compose up -d    # из корня репозитория: Postgres и Redis
-cp .env.example .env
-pnpm dev                # из корня: pnpm dev:server
+docker compose up -d                          # Postgres и Redis
+cp apps/server/.env.example apps/server/.env
+pnpm dev:server
 # -> http://localhost:3001/health
 ```
 
