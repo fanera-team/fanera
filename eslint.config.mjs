@@ -48,4 +48,26 @@ export default tseslint.config(
       '@conarti/feature-sliced/absolute-relative': 'off',
     },
   },
+  {
+    files: ['apps/web/src/**/*.tsx'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: 'JSXText[value=/[A-Za-zА-Яа-яЁё]/]',
+          message: 'Move user-facing text to translations and render it with t().',
+        },
+        {
+          selector:
+            ':matches(JSXElement, JSXFragment) > JSXExpressionContainer > Literal[value=/[A-Za-zА-Яа-яЁё]/]',
+          message: 'Move user-facing text to translations and render it with t().',
+        },
+        {
+          selector:
+            'JSXAttribute[name.name=/^(placeholder|title|alt|aria-label|aria-description)$/][value.value=/[A-Za-zА-Яа-яЁё]/]',
+          message: 'Move user-facing attribute text to translations and render it with t().',
+        },
+      ],
+    },
+  },
 )

@@ -36,6 +36,8 @@
 
 **Порядок чтения после этой страницы:** [простые sequence-диаграммы](sequences/README.md) → [README](README.md) (разделы 0–3, 7) → [architecture/README.md](architecture/README.md) → [deep-dive](deep-dive.md) §1–4 → остальное по задаче.
 
+Локализация интерфейса и будущих серверных сообщений описана в [i18n.md](i18n.md).
+
 ## 3. Сущности
 
 ### Главные сущности

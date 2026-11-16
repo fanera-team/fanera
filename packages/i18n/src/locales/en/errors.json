@@ -1,0 +1,15 @@
+{
+  "UNKNOWN": "Something went wrong. Please try again.",
+  "FORBIDDEN": "You do not have permission to perform this action.",
+  "RATE_LIMITED": "Too many changes. Please try again later.",
+  "TOO_LARGE": "The changes are too large to sync.",
+  "ELEMENT_LIMIT": "This board has too many elements.",
+  "INVALID_ELEMENT": "The element could not be added.",
+  "BOARD_READ_ONLY": "This board is temporarily read-only.",
+  "INVALID_UPDATE": "The changes could not be synced.",
+  "TRANSFER_EXPIRED": "The transfer timed out.",
+  "NOT_FOUND": "Not found, or you do not have access.",
+  "BOARD_FULL": "Too many people are on this board right now.",
+  "BOARD_NOT_READY": "The board is still being copied.",
+  "UPGRADE_REQUIRED": "A new version is available. Refresh the page."
+}
