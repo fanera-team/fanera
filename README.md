@@ -14,6 +14,22 @@ pnpm install
 pnpm --filter web dev
 ```
 
+### Postgres и Redis
+
+Нужен Docker (Docker Desktop или OrbStack). Из корня репозитория:
+
+```bash
+docker compose up -d                            # Postgres и Redis в фоне
+docker compose ps                               # дождаться статуса healthy
+cp apps/server/.env.example apps/server/.env
+pnpm --filter server dev                        # http://localhost:3001/health
+```
+
+`/health` отвечает `200` и `"postgres": "up", "redis": "up"`, если всё подключено, и `503`, если что-то недоступно.
+
+Остановить: `docker compose down`. Удалить вместе с данными: `docker compose down -v`.
+Логин, пароль и порты по умолчанию — в `docker-compose.yml`; поменять их можно через корневой `.env` (см. `.env.example`).
+
 Проверки по всем приложениям: `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build`, `pnpm format`.
 
 ## Структура
