@@ -1,0 +1,13 @@
+{
+  "demo": {
+    "heading": "Tailwind работает!",
+    "count": "Счётчик: {{count}}",
+    "increment": "Увеличить",
+    "decrement": "Уменьшить"
+  },
+  "language": {
+    "label": "Язык",
+    "ru": "Русский",
+    "en": "English"
+  }
+}
