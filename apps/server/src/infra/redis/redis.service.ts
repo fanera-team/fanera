@@ -9,6 +9,8 @@ import { Redis } from 'ioredis';
 import type { Env } from '../../config/env.schema.js';
 import { errorMessage } from '../error-message.js';
 
+const QUIT_TIMEOUT_MS = 2000;
+
 @Injectable()
 export class RedisService implements OnModuleInit, OnApplicationShutdown {
   private readonly logger = new Logger(RedisService.name);
@@ -21,6 +23,8 @@ export class RedisService implements OnModuleInit, OnApplicationShutdown {
       connectTimeout: 2000,
       // Ответ на команду ждём не дольше 2 с, даже если соединение зависло
       commandTimeout: 2000,
+      // Если сокет молчит 5 с (например, пропала сеть), соединение закрывается
+      socketTimeout: 5000,
       // Без очереди команды при недоступном Redis падают сразу, а не висят
       enableOfflineQueue: false,
       maxRetriesPerRequest: 1,
@@ -50,10 +54,27 @@ export class RedisService implements OnModuleInit, OnApplicationShutdown {
   }
 
   async onApplicationShutdown(): Promise<void> {
-    if (this.client.status === 'ready') {
-      await this.client.quit();
-    } else {
+    if (this.client.status !== 'ready') {
       this.client.disconnect();
+      return;
+    }
+
+    // quit() ждёт ответа Redis; если он завис, закрываем соединение сами
+    let timer: NodeJS.Timeout | undefined;
+    try {
+      await Promise.race([
+        this.client.quit(),
+        new Promise<never>((_, reject) => {
+          timer = setTimeout(
+            () => reject(new Error('redis quit timed out')),
+            QUIT_TIMEOUT_MS,
+          );
+        }),
+      ]);
+    } catch {
+      this.client.disconnect();
+    } finally {
+      clearTimeout(timer);
     }
   }
 }
