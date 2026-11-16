@@ -1,6 +1,5 @@
 {
   "demo": {
-    "heading": "Tailwind works!",
     "count": "Counter: {{count}}",
     "increment": "Increase",
     "decrement": "Decrease"
@@ -9,5 +8,9 @@
     "label": "Language",
     "ru": "Русский",
     "en": "English"
+  },
+  "theme": {
+    "light": "Light theme",
+    "dark": "Dark theme"
   }
 }
