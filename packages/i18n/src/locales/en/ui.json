@@ -13,6 +13,21 @@
       "en": "EN"
     }
   },
+  "stories": {
+    "button": {
+      "createBoard": "Создать доску",
+      "add": "Добавить",
+      "cancel": "Отмена",
+      "delete": "Удалить",
+      "signIn": "Войти",
+      "unavailable": "Недоступно"
+    },
+    "field": {
+      "emailLabel": "Email",
+      "emailPlaceholder": "name@example.com",
+      "boardSelect": "Выбрать доску"
+    }
+  },
   "theme": {
     "light": "Light theme",
     "dark": "Dark theme"

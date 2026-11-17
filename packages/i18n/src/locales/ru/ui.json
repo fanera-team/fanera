@@ -13,6 +13,21 @@
       "en": "EN"
     }
   },
+  "stories": {
+    "button": {
+      "createBoard": "Create board",
+      "add": "Add",
+      "cancel": "Cancel",
+      "delete": "Delete",
+      "signIn": "Sign in",
+      "unavailable": "Unavailable"
+    },
+    "field": {
+      "emailLabel": "Email",
+      "emailPlaceholder": "name@example.com",
+      "boardSelect": "Select a board"
+    }
+  },
   "theme": {
     "light": "Светлая тема",
     "dark": "Тёмная тема"
