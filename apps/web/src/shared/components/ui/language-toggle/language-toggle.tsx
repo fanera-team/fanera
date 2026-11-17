@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { resolveLanguage } from '@/shared/lib/language'
-import { SegmentedToggle } from './segmented-toggle'
+import { SegmentedToggle } from '../segmented-toggle/segmented-toggle'
 
 export function LanguageToggle() {
   const { t, i18n } = useTranslation('ui')
