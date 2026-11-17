@@ -1,6 +1,5 @@
 {
   "demo": {
-    "heading": "Tailwind работает!",
     "count": "Счётчик: {{count}}",
     "increment": "Увеличить",
     "decrement": "Уменьшить"
@@ -8,6 +7,14 @@
   "language": {
     "label": "Язык",
     "ru": "Русский",
-    "en": "English"
+    "en": "English",
+    "short": {
+      "ru": "RU",
+      "en": "EN"
+    }
+  },
+  "theme": {
+    "light": "Светлая тема",
+    "dark": "Тёмная тема"
   }
 }

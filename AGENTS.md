@@ -88,6 +88,7 @@ Fanera — командный проект курса Ulbi TV (3 поток). Ц
 | `apps/server`        | Бэкенд: NestJS (см. [README](apps/server/README.md))      |
 | `packages/*`         | Общий код фронта и бэка (пока пусто, в плане `contracts`) |
 | `docs/system-design` | System design: требования, архитектура, API, решения      |
+| `docs/design`        | Ссылка на макеты Penpot, темы и токены интерфейса         |
 
 ### Стек
 
@@ -95,8 +96,8 @@ Fanera — командный проект курса Ulbi TV (3 поток). Ц
 
 #### Фронтенд (`apps/web`)
 
-- Сейчас есть: React 19, Vite, TypeScript, Tailwind CSS 4.
-- В плане: TanStack Query, Zustand, Yjs + `y-indexeddb`, socket.io-client, React Hook Form + Zod, shadcn/ui. Библиотеку холста выбирают в прототипе (задача T0-04).
+- Сейчас есть: React 19, Vite, TypeScript, Tailwind CSS 4, TanStack Query, Zustand, shadcn/ui.
+- В плане: Yjs + `y-indexeddb`, socket.io-client, React Hook Form + Zod. Библиотеку холста выбирают в прототипе (задача T0-04).
 
 #### Бэкенд (`apps/server`)
 
@@ -114,6 +115,10 @@ Fanera — командный проект курса Ulbi TV (3 поток). Ц
 #### Фронтенд
 
 - Feature-Sliced Design, проверяется ESLint (`@conarti/eslint-plugin-feature-sliced`): импорты только сверху вниз по слоям (app → pages → widgets → features → entities → shared); из слайса импортируем только через его public API (`index.ts`).
+- Визуальный источник — [дизайн Fanera](docs/design/design.md) и [макеты Penpot](docs/design/README.md#источник-макетов). Для новых экранов используем «Холодный графит» и Montserrat. Актуальные экраны и токены хранятся в облачном файле Penpot.
+- Экраны верстаем по макетам Penpot и собираем повторяемые элементы из компонентов `apps/web/src/shared/components/ui`; соблюдаем public API слайсов и границы слоёв FSD.
+- Токены светлой и тёмной тем лежат в [CSS-теме](apps/web/src/shared/styles/globals.css). Цвета интерфейса задаём только через смысловые токены темы: `bg-primary`, а не `bg-blue-500` или `bg-[#3b82f6]`. Компоненты shadcn/ui адаптируем под тему Fanera, не используем их готовую палитру.
+- Тема переключается через `ThemeToggle` из `apps/web/src/shared/components/ui`. Каждый новый UI-компонент проверяем в светлой и тёмной теме, в том числе в Storybook.
 - Где живёт состояние ([frontend.md §1](docs/system-design/frontend.md)): данные сервера — TanStack Query, содержимое доски — только `Y.Doc`, курсоры — Awareness вне React-дерева, UI — Zustand. Не смешивать.
 - Частые события холста (движение курсора, drag) не должны вызывать ререндер всего дерева.
 - Без `any`: если тип неизвестен, используем `unknown` и сужаем тип; если без `any` никак, оставляем комментарий с причиной.

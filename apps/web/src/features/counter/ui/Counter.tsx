@@ -1,4 +1,4 @@
-import { Button } from '@/shared/components/ui/button'
+import { Button } from '@/shared/components/ui'
 import { useTranslation } from 'react-i18next'
 import { useCounterStore } from '../model/counter-store'
 
@@ -7,9 +7,9 @@ export function Counter() {
   const { t } = useTranslation('ui')
 
   return (
-    <div className="gap-4 flex items-center justify-center">
+    <div className="gap-4 flex flex-col items-center">
       <div>{t('demo.count', { count })}</div>
-      <div className="gap-2 flex">
+      <div className="gap-2 flex justify-start">
         <CounterControl type="increment" />
         <CounterControl type="decrement" />
       </div>

@@ -1,6 +1,34 @@
 import type { Preview } from '@storybook/react-vite'
+import { useEffect, type ReactNode } from 'react'
+import { useGlobals } from 'storybook/preview-api'
+import type { Theme } from '@/shared/lib/theme'
+import { useThemeStore } from '@/shared/lib/theme-store'
+import '@/shared/lib/i18n'
+import '@/shared/styles/globals.css'
 
-import '../src/shared/styles/globals.css'
+function ThemePreview({
+  theme,
+  updateGlobals,
+  children,
+}: {
+  theme: Theme
+  updateGlobals: (globals: { theme: Theme }) => void
+  children: ReactNode
+}) {
+  useEffect(() => {
+    useThemeStore.getState().changeTheme(theme)
+  }, [theme])
+
+  useEffect(
+    () =>
+      useThemeStore.subscribe((state) => {
+        if (state.theme !== theme) updateGlobals({ theme: state.theme })
+      }),
+    [theme, updateGlobals],
+  )
+
+  return <div className="bg-background text-foreground p-4 min-h-screen">{children}</div>
+}
 
 const preview: Preview = {
   globalTypes: {
@@ -22,13 +50,15 @@ const preview: Preview = {
   },
 
   decorators: [
-    (Story, context) => (
-      <div
-        className={`${context.globals.theme === 'dark' ? 'dark' : ''} bg-background text-foreground`}
-      >
-        <Story />
-      </div>
-    ),
+    (Story, context) => {
+      const [, updateGlobals] = useGlobals()
+      const theme: Theme = context.globals.theme === 'dark' ? 'dark' : 'light'
+      return (
+        <ThemePreview theme={theme} updateGlobals={updateGlobals}>
+          <Story />
+        </ThemePreview>
+      )
+    },
   ],
 
   parameters: {

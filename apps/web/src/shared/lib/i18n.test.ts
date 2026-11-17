@@ -17,7 +17,7 @@ test('prefers the saved language over the browser language on startup', async ()
 
   const { i18n } = await import('./i18n')
 
-  expect(i18n.t('demo.heading', { ns: 'ui' })).toBe('Tailwind works!')
+  expect(i18n.t('language.label', { ns: 'ui' })).toBe('Language')
   expect(document.documentElement.lang).toBe('en')
 })
 
@@ -26,7 +26,7 @@ test('uses the browser language when no preference is saved', async () => {
 
   const { i18n } = await import('./i18n')
 
-  expect(i18n.t('demo.heading', { ns: 'ui' })).toBe('Tailwind works!')
+  expect(i18n.t('language.label', { ns: 'ui' })).toBe('Language')
   expect(document.documentElement.lang).toBe('en')
 })
 
@@ -38,7 +38,7 @@ test('uses the browser language when reading storage fails', async () => {
 
   const { i18n } = await import('./i18n')
 
-  expect(i18n.t('demo.heading', { ns: 'ui' })).toBe('Tailwind works!')
+  expect(i18n.t('language.label', { ns: 'ui' })).toBe('Language')
   expect(document.documentElement.lang).toBe('en')
 })
 
@@ -51,7 +51,7 @@ test('still switches language when writing storage fails', async () => {
   const { i18n } = await import('./i18n')
   await i18n.changeLanguage('en')
 
-  expect(i18n.t('demo.heading', { ns: 'ui' })).toBe('Tailwind works!')
+  expect(i18n.t('language.label', { ns: 'ui' })).toBe('Language')
   expect(document.documentElement.lang).toBe('en')
 })
 
@@ -59,10 +59,10 @@ test('switches text, document language, and saved preference', async () => {
   vi.spyOn(navigator, 'language', 'get').mockReturnValue('ru-RU')
   const { i18n } = await import('./i18n')
 
-  expect(i18n.t('demo.heading', { ns: 'ui' })).toBe('Tailwind работает!')
+  expect(i18n.t('language.label', { ns: 'ui' })).toBe('Язык')
   await i18n.changeLanguage('en')
 
-  expect(i18n.t('demo.heading', { ns: 'ui' })).toBe('Tailwind works!')
+  expect(i18n.t('language.label', { ns: 'ui' })).toBe('Language')
   expect(document.documentElement.lang).toBe('en')
   expect(localStorage.getItem('fanera.locale')).toBe('en')
 })
