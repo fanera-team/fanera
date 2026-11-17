@@ -25,7 +25,7 @@ pnpm dev:server
 - `src/config/env.schema.ts` — Zod-схема переменных окружения. Проверяется при старте: с некорректным `.env` сервер не запустится и напишет, что не так.
 - `src/app.module.ts` — корневой модуль, подключает модули фич.
 - `src/common/` — сквозные вещи, не принадлежащие фичам: `filters/` (ошибки HTTP → `Problem`) и `pipes/` (Zod-валидация входных данных).
-- `src/infra/` — подключения к внешним сервисам: `postgres/` (пул `pg`, до ORM из #32), `redis/` (`ioredis`).
+- `src/infra/` — подключения к внешним сервисам: `postgres/` (пул `pg`, до ORM из #32), `redis/` (`ioredis`), `logger.ts` (JSON при `NODE_ENV=production`, текст локально; секреты маскируются).
 - `src/health/` — `GET /health`: пингует Postgres и Redis с таймаутом 2 с; `200` — всё доступно, `503` — нет.
 
 ## Как добавлять код

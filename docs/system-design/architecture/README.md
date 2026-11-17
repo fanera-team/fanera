@@ -80,6 +80,19 @@ src/
 
 Внутри модуля три слоя: `controller` / `gateway` / `processor` (транспорт) → `service` (бизнес-логика) → `repository` (Prisma). **Правило:** проверка прав живёт в одном месте (`access.PermissionService`). HTTP-guard и WS-guard — тонкие обёртки над ним, поэтому «проверить права и в HTTP, и в WS» (требование ТЗ) — это один код, а не два.
 
+Шаблон модуля (на примере `boards`; `repository` появится вместе с Prisma, #32):
+
+```
+src/boards/
+  boards.module.ts       # DI: controller + service + repository
+  boards.controller.ts   # HTTP: Zod-схемы, вызов сервиса, исключения Nest
+  boards.service.ts      # бизнес-логика, не знает про Request/Response
+  boards.repository.ts   # доступ к БД через Prisma, без HTTP и прав
+  dto/                   # Zod-схемы и z.infer; общие с фронтом — в packages/contracts
+```
+
+`health/` — минимальный эталон без репозитория. В контроллере и гейтвее нет бизнес-логики и SQL, сервис не принимает `Request`/`Response`, репозиторий не бросает HTTP-исключения, DTO — только Zod-схемы, без `class-validator`.
+
 ### Как это ложится на репозиторий
 
 Монорепо на pnpm workspaces (Р-24):
