@@ -88,7 +88,7 @@ src/
 |---|---|---|---|
 | `apps/web` | фронтенд: SPA на React + Vite, TypeScript, Tailwind (Р-65) | каркас из шаблона Vite | каталог, холст, страница доски (T1-10, T2-05, T2-13). Как фронт работает с бэком — [frontend.md](../frontend.md) |
 | `apps/server` | бэкенд: NestJS 12 (ESM, Express, Zod, Vitest) — все три роли из одного кода | одна точка входа `main.ts`, конфиг через Zod, `GET /health`, префикс REST `/api` | три точки входа `main.api.ts` / `main.collab.ts` / `main.worker.ts` (T1-04), Prisma (T1-05), модули фич из списка выше |
-| `packages/contracts` | общие для фронта и бэка zod-схемы и типы: REST, события сокета, модель элемента доски | папка `packages/` пока пустая | T1-09. До него договариваемся по [rest_api.yml](../api/rest_api.yml) и [websocket.md](../api/websocket.md) |
+| `packages/contracts` | общие для фронта и бэка zod-схемы и типы: REST, события сокета, модель элемента доски | `@fanera/contracts`: типы Problem Details и схема ошибки поля; подключён к серверу | T1-09 начата: далее схемы auth и подключение потребителей на фронте. Контракты согласуем по [rest_api.yml](../api/rest_api.yml) и [websocket.md](../api/websocket.md) |
 | `docs/system-design` | эта документация | есть | обновляем вместе с решениями ([decisions.md](../decisions.md)) |
 
 **Куда класть код:**
