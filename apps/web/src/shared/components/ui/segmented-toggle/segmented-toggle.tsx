@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { cn } from '@/shared/lib/utils'
-import { Button } from './button'
+import { Button } from '../button/button'
 
 export interface SegmentedToggleOption<Value extends string> {
   value: Value
