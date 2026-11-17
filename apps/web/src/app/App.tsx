@@ -1,7 +1,5 @@
 import { Counter } from '@/features/counter'
-import { LanguageToggle, Logo, ThemeToggle } from '@/shared/components/ui'
-import { Toaster } from '@/shared/components/ui/sonner/sonner'
-import { TooltipProvider } from '@/shared/components/ui/tooltip/tooltip'
+import { LanguageToggle, Logo, ThemeToggle, Toaster, TooltipProvider } from '@/shared/components/ui'
 
 function App() {
   return (

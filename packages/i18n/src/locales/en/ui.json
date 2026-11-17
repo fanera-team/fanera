@@ -26,6 +26,7 @@
     "deleteBoardSuccess": "Board deleted"
   },
   "dialog": { "close": "Close" },
+  "toast": { "containerAriaLabel": "Notifications" },
   "examples": {
     "open": "Open",
     "title": "Title",

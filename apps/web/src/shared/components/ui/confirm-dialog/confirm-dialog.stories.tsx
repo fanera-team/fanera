@@ -20,7 +20,7 @@ const meta = {
 } satisfies Meta<typeof ConfirmDialog>
 
 export default meta
-type Story = StoryObj<typeof meta>
+type Story = StoryObj<Meta<typeof ConfirmDialog>>
 
 function DeleteBoardDemo() {
   const { t } = useTranslation('ui')
@@ -48,7 +48,6 @@ export const DeleteBoard: Story = {
   args: {
     open: false,
     onOpenChange: () => {},
-    title: 'Delete board?',
     onConfirm: () => {},
   },
   render: () => <DeleteBoardDemo />,

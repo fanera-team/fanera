@@ -19,6 +19,18 @@ function TestTooltip() {
   )
 }
 
+function UncontrolledTestTooltip() {
+  const { t } = useTranslation('ui')
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger>{t('examples.hover')}</TooltipTrigger>
+        <TooltipContent>{t('examples.tooltip')}</TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  )
+}
+
 describe('Tooltip', () => {
   it('рендерит подсказку в открытом состоянии', async () => {
     render(<TestTooltip />)
@@ -32,5 +44,20 @@ describe('Tooltip', () => {
     await user.tab()
     await user.keyboard('{Escape}')
     await waitFor(() => expect(screen.queryByText('Tooltip')).not.toBeInTheDocument())
+  })
+
+  it('открывается по Tab и закрывается по Esc, сохраняя фокус на триггере', async () => {
+    const user = userEvent.setup()
+    render(<UncontrolledTestTooltip />)
+    expect(screen.queryByText('Tooltip')).not.toBeInTheDocument()
+
+    await user.tab()
+    const trigger = screen.getByRole('button', { name: 'Hover' })
+    expect(trigger).toHaveFocus()
+    expect(await screen.findByText('Tooltip')).toBeInTheDocument()
+
+    await user.keyboard('{Escape}')
+    await waitFor(() => expect(screen.queryByText('Tooltip')).not.toBeInTheDocument())
+    expect(trigger).toHaveFocus()
   })
 })

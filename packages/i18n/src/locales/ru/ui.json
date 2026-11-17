@@ -26,6 +26,7 @@
     "deleteBoardSuccess": "Доска удалена"
   },
   "dialog": { "close": "Закрыть" },
+  "toast": { "containerAriaLabel": "Уведомления" },
   "examples": {
     "open": "Открыть",
     "title": "Заголовок",

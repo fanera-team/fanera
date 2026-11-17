@@ -3,6 +3,7 @@ import { expect, userEvent, within } from 'storybook/test'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './tooltip'
 import { Button } from '../button/button'
 import { useTranslation } from 'react-i18next'
+import { i18n } from '@/shared/lib/i18n'
 
 const meta = {
   title: 'Shared/UI/Tooltip',
@@ -23,8 +24,14 @@ export const Basic: Story = {
   render: () => <BasicTooltip />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await userEvent.hover(canvas.getByRole('button', { name: 'Hover over me' }))
-    const tooltip = await within(document.body).findByText('Tooltip', undefined, { timeout: 3000 })
+    await userEvent.hover(
+      canvas.getByRole('button', { name: i18n.t('examples.hoverCursor', { ns: 'ui' }) }),
+    )
+    const tooltip = await within(document.body).findByText(
+      i18n.t('examples.tooltip', { ns: 'ui' }),
+      undefined,
+      { timeout: 3000 },
+    )
     await expect(tooltip).toBeInTheDocument()
   },
 }
