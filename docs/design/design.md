@@ -1,6 +1,6 @@
 # Дизайн Fanera
 
-Источник макетов — [Fanera Design в Penpot](https://design.penpot.app/?screen=viewer&file-id=b4b906dd-9024-819c-8008-f4957b11ac5e&page-id=ab9b75aa-429a-802c-8008-f460534539f2&section=interactions&index=0&share-id=f889491d-6534-4da0-853c-d19909acf1c7). Названия экранов и их состояний перечислены в [карте экранов](README.md#карта-экранов-и-состояний).
+Источник макетов — [Fanera Design в Penpot](https://design.penpot.app/?screen=viewer&file-id=51f2d744-23b9-8138-8008-f43d2bb86a56&page-id=ab9b75aa-429a-802c-8008-f460534539f2&section=interactions&frame-id=ab9b75aa-429a-802c-8008-f4661b667f20&index=0&share-id=34bf9ccd-91f6-4266-984e-3a44b85691b8). Названия экранов и их состояний перечислены в [карте экранов](README.md#карта-экранов-и-состояний).
 
 Принятый стиль — «Холодный графит» в светлой и тёмной темах, шрифт Montserrat. Палитра, типографика и правила передачи экранов в разработку описаны в [дизайн-документации](README.md#цвет-и-типографика). Токены темы реализованы в [globals.css](../../apps/web/src/shared/styles/globals.css).
 

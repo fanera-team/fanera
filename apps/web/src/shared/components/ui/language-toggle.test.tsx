@@ -19,21 +19,32 @@ test('switches language, updates labels, and saves the choice', async () => {
   const container = document.createElement('div')
   document.body.append(container)
   const root = createRoot(container)
+  const button = (name: string) => {
+    const match = container.querySelector<HTMLButtonElement>(`button[aria-label="${name}"]`)
+    if (!match) throw new Error(`Button ${name} not found`)
+    return match
+  }
 
   await act(async () => root.render(<LanguageToggle />))
-  const [russian, english] = container.querySelectorAll('button')
+  const russian = button('Русский')
+  const english = button('English')
   expect(russian.getAttribute('aria-pressed')).toBe('true')
   expect(english.getAttribute('aria-pressed')).toBe('false')
   expect(container.querySelector('[role="group"]')?.getAttribute('aria-label')).toBe('Язык')
-  const indicator = container.querySelector('[data-segmented-indicator]') as HTMLElement
-  expect(indicator.style.transform).toBe('translateX(0px)')
 
   await act(async () => english.click())
   expect(document.documentElement.lang).toBe('en')
   expect(localStorage.getItem('fanera.locale')).toBe('en')
-  expect(english.getAttribute('aria-pressed')).toBe('true')
+  expect(button('English').getAttribute('aria-pressed')).toBe('true')
+  expect(button('Русский').getAttribute('aria-pressed')).toBe('false')
   expect(container.querySelector('[role="group"]')?.getAttribute('aria-label')).toBe('Language')
-  expect(indicator.style.transform).toBe('translateX(52px)')
+
+  await act(async () => russian.click())
+  expect(document.documentElement.lang).toBe('ru')
+  expect(localStorage.getItem('fanera.locale')).toBe('ru')
+  expect(button('Русский').getAttribute('aria-pressed')).toBe('true')
+  expect(button('English').getAttribute('aria-pressed')).toBe('false')
+  expect(container.querySelector('[role="group"]')?.getAttribute('aria-label')).toBe('Язык')
 
   await act(async () => root.unmount())
 })

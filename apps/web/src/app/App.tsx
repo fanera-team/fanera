@@ -5,7 +5,7 @@ function App() {
   return (
     <main className="bg-background text-foreground flex min-h-screen items-center justify-center">
       <div className="gap-8 flex flex-col justify-between">
-        <div className="gap-4 flex items-center justify-between">
+        <div className="gap-4 flex flex-wrap items-center justify-between">
           <h1>
             <Logo kind="lockup" size={48} />
           </h1>

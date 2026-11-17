@@ -10,8 +10,8 @@ export function LanguageToggle() {
       label={t('language.label')}
       value={resolveLanguage(i18n.resolvedLanguage)}
       options={[
-        { value: 'ru', label: t('language.ru'), content: 'RU' },
-        { value: 'en', label: t('language.en'), content: 'EN' },
+        { value: 'ru', label: t('language.ru'), content: t('language.short.ru') },
+        { value: 'en', label: t('language.en'), content: t('language.short.en') },
       ]}
       onValueChange={(language) => void i18n.changeLanguage(language)}
     />

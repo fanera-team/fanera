@@ -7,7 +7,11 @@
   "language": {
     "label": "Язык",
     "ru": "Русский",
-    "en": "English"
+    "en": "English",
+    "short": {
+      "ru": "RU",
+      "en": "EN"
+    }
   },
   "theme": {
     "light": "Светлая тема",
