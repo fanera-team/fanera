@@ -11,7 +11,8 @@ const buttonVariants = cva(
       variant: {
         primary: 'bg-primary text-primary-foreground hover:bg-primary/90',
         secondary: 'bg-accent text-accent-ink hover:bg-accent/80',
-        outline: 'border-border bg-transparent text-foreground hover:bg-muted',
+        outline:
+          'border-border bg-transparent text-foreground hover:bg-muted aria-expanded:bg-muted',
         ghost: 'hover:bg-muted hover:text-foreground',
         destructive: 'bg-destructive-subtle text-destructive hover:bg-destructive/15',
         link: 'text-primary underline-offset-4 hover:underline',
@@ -46,6 +47,7 @@ function Button({
   loading = false,
   disabled,
   onClick,
+  'aria-busy': ariaBusy,
   children,
   ...props
 }: ButtonProps) {
@@ -53,12 +55,12 @@ function Button({
     <ButtonPrimitive
       data-slot="button"
       data-loading={loading ? true : undefined}
-      aria-busy={loading ? true : undefined}
       aria-disabled={disabled || loading ? true : undefined}
-      disabled={disabled}
-      onClick={loading ? undefined : onClick}
+      disabled={disabled || loading}
+      onClick={loading ? (event) => event.preventDefault() : onClick}
       className={cn(buttonVariants({ variant, size, className }), loading && 'pointer-events-none')}
       {...props}
+      aria-busy={loading ? true : ariaBusy}
     >
       {loading && <Icon icon={LoaderCircle} className="animate-spin" />}
       {children}

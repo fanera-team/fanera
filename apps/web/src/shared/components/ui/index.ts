@@ -3,6 +3,7 @@ export { Button } from './button/button'
 export { Checkbox } from './checkbox/checkbox'
 export { Input } from './input/input'
 export { Textarea } from './textarea/textarea'
+export { Label } from './label/label'
 export { ConfirmDialog } from './confirm-dialog/confirm-dialog'
 export {
   Dialog,

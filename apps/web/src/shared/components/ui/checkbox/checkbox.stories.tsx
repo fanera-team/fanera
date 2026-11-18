@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import type { ComponentProps } from 'react'
+import { useId, type ComponentProps } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Label } from '../label/label'
 import { Checkbox } from './checkbox'
@@ -8,18 +8,20 @@ type CheckboxStoryProps = Omit<ComponentProps<typeof Checkbox>, 'aria-label'> & 
   withLabel?: boolean
 }
 
-function CheckboxStory({ withLabel, ...props }: CheckboxStoryProps) {
+function CheckboxStory({ withLabel, id, ...props }: CheckboxStoryProps) {
   const { t } = useTranslation('ui')
+  const generatedId = useId()
+  const checkboxId = id ?? generatedId
   const label = t('stories.field.boardSelect')
 
   if (!withLabel) {
-    return <Checkbox aria-label={label} {...props} />
+    return <Checkbox id={checkboxId} aria-label={label} {...props} />
   }
 
   return (
     <div className="gap-2 flex items-center">
-      <Checkbox id="checkbox-with-label" aria-label={label} {...props} />
-      <Label htmlFor="checkbox-with-label">{label}</Label>
+      <Checkbox id={checkboxId} aria-label={label} {...props} />
+      <Label htmlFor={checkboxId}>{label}</Label>
     </div>
   )
 }

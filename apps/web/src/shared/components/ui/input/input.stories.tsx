@@ -1,5 +1,15 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
+import type { ComponentProps } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Input } from './input'
+
+type InputStoryProps = Omit<ComponentProps<typeof Input>, 'aria-label'>
+
+function InputStory(props: InputStoryProps) {
+  const { t } = useTranslation('ui')
+
+  return <Input aria-label={t('stories.field.emailLabel')} {...props} />
+}
 
 const meta = {
   title: 'Shared/UI/Input',
@@ -25,21 +35,25 @@ export default meta
 type Story = StoryObj<typeof meta>
 
 export const Default: Story = {
-  args: { 'aria-label': 'Email' },
+  render: (args) => <InputStory {...args} />,
 }
 
 export const Filled: Story = {
-  args: { 'aria-label': 'Email', defaultValue: 'name@example.com' },
+  args: { defaultValue: 'name@example.com' },
+  render: (args) => <InputStory {...args} />,
 }
 
 export const Focus: Story = {
-  args: { 'aria-label': 'Email', defaultValue: 'name@example.com', autoFocus: true },
+  args: { defaultValue: 'name@example.com', autoFocus: true },
+  render: (args) => <InputStory {...args} />,
 }
 
 export const Invalid: Story = {
-  args: { 'aria-label': 'Email', defaultValue: 'name@example', 'aria-invalid': true },
+  args: { defaultValue: 'name@example', 'aria-invalid': true },
+  render: (args) => <InputStory {...args} />,
 }
 
 export const Disabled: Story = {
-  args: { 'aria-label': 'Email', defaultValue: 'name@example.com', disabled: true },
+  args: { defaultValue: 'name@example.com', disabled: true },
+  render: (args) => <InputStory {...args} />,
 }

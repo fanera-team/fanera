@@ -6,6 +6,36 @@ import { Button } from './button'
 const CREATE = 'Создать доску'
 const UNAVAILABLE = 'Недоступно'
 
+function BoardForm({ loading, onConfirm }: { loading: boolean; onConfirm: () => void }) {
+  return (
+    <form
+      onSubmit={(event) => {
+        event.preventDefault()
+        onConfirm()
+      }}
+    >
+      <Button type="submit" loading={loading}>
+        {CREATE}
+      </Button>
+    </form>
+  )
+}
+
+describe('Button в форме', () => {
+  it('не отправляет форму, пока кнопка в состоянии загрузки', async () => {
+    const user = userEvent.setup()
+    const onConfirm = vi.fn()
+    const { rerender } = render(<BoardForm loading onConfirm={onConfirm} />)
+
+    await user.click(screen.getByRole('button', { name: CREATE }))
+    expect(onConfirm).not.toHaveBeenCalled()
+
+    rerender(<BoardForm loading={false} onConfirm={onConfirm} />)
+    await user.click(screen.getByRole('button', { name: CREATE }))
+    expect(onConfirm).toHaveBeenCalledTimes(1)
+  })
+})
+
 describe('Button', () => {
   it('вызывает обработчик клика', async () => {
     const user = userEvent.setup()

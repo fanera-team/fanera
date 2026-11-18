@@ -25,7 +25,8 @@
     "field": {
       "emailLabel": "Email",
       "emailPlaceholder": "name@example.com",
-      "boardSelect": "Выбрать доску"
+      "boardSelect": "Выбрать доску",
+      "boardDescription": "Описание доски"
     }
   },
   "theme": {
