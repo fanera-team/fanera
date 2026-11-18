@@ -1,5 +1,3 @@
-// Тестовые данные для локальной разработки: pnpm --filter server db:seed
-// Скрипт можно запускать много раз: upsert не создаёт дубли
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '../src/generated/prisma/client.js';
 
