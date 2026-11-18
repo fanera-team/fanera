@@ -15,17 +15,17 @@
   },
   "stories": {
     "button": {
-      "createBoard": "Создать доску",
-      "add": "Добавить",
-      "cancel": "Отмена",
-      "delete": "Удалить",
-      "signIn": "Войти",
-      "unavailable": "Недоступно"
+      "createBoard": "Create board",
+      "add": "Add",
+      "cancel": "Cancel",
+      "delete": "Delete",
+      "signIn": "Sign in",
+      "unavailable": "Unavailable"
     },
     "field": {
       "emailLabel": "Email",
       "emailPlaceholder": "name@example.com",
-      "boardSelect": "Выбрать доску"
+      "boardSelect": "Select a board"
     }
   },
   "theme": {
