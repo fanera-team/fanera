@@ -82,13 +82,13 @@ Fanera — командный проект курса Ulbi TV (3 поток). Ц
 
 Монорепозиторий на pnpm workspaces.
 
-| Путь                 | Что это                                                   |
-| -------------------- | --------------------------------------------------------- |
-| `apps/web`           | Фронтенд: React + Vite, Feature-Sliced Design             |
-| `apps/server`        | Бэкенд: NestJS (см. [README](apps/server/README.md))      |
-| `packages/*`         | Общий код фронта и бэка (пока пусто, в плане `contracts`) |
-| `docs/system-design` | System design: требования, архитектура, API, решения      |
-| `docs/design`        | Ссылка на макеты Penpot, темы и токены интерфейса         |
+| Путь                 | Что это                                                             |
+| -------------------- | ------------------------------------------------------------------- |
+| `apps/web`           | Фронтенд: React + Vite, Feature-Sliced Design                       |
+| `apps/server`        | Бэкенд: NestJS (см. [README](apps/server/README.md))                |
+| `packages/*`         | Общий код фронта и бэка: `contracts` (zod-схемы), `i18n` (переводы) |
+| `docs/system-design` | System design: требования, архитектура, API, решения                |
+| `docs/design`        | Ссылка на макеты Penpot, темы и токены интерфейса                   |
 
 ### Стек
 
@@ -104,9 +104,12 @@ Fanera — командный проект курса Ulbi TV (3 поток). Ц
 - Сейчас есть: NestJS 12 (ESM, Express), Zod для валидации и конфига, Vitest, oxlint.
 - В плане: Prisma + Postgres (схемы `core` и `collab`), Redis, BullMQ, socket.io + Yjs, Swagger, S3 (MinIO).
 
-#### Общее (в плане)
+#### Общее (`packages/*`)
 
-- `packages/contracts` — zod-схемы и типы, общие для фронта и бэка (задача T1-09). Изменения в нём потенциально ломают и фронт, и бэк: обсуждай это явно.
+- Сейчас есть:
+  - `packages/contracts` — zod-схемы и типы, общие для фронта и бэка: пока `Problem` и `FieldError`; пакет подключён к серверу.
+  - `packages/i18n` — переводы интерфейса (`ru` и `en`); фронт импортирует их через `@fanera/i18n`.
+- В плане: схемы auth и остальные контракты в `contracts`, подключение `contracts` на фронте (задача T1-09). Изменения в общих пакетах потенциально ломают и фронт, и бэк: обсуждай это явно.
 
 Версии React, Vite, NestJS, TypeScript и других библиотек могут быть новее, чем в твоих данных обучения. Сверяйся с официальной документацией и с `node_modules`, а не с памятью.
 

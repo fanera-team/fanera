@@ -237,6 +237,19 @@ test('невалидный JSON отклоняется с 400 до провер�
   expect(res.body).not.toHaveProperty('stack');
 });
 
+test('тело больше лимита парсера → 413, а не 500', async ({ http }) => {
+  // Ошибку бросает body-parser до Zod: проверяем, что фильтр сохраняет
+  // HTTP-статус, который Nest извлёк из http-errors.
+  const res = await http.api
+    .post(validationPath)
+    .set('Content-Type', 'application/json')
+    .send(JSON.stringify({ ...validBody, pad: 'x'.repeat(200_000) }))
+    .expect('Content-Type', PROBLEM_JSON)
+    .expect(413);
+
+  expect(res.body).toMatchObject({ status: 413, code: 'PAYLOAD_TOO_LARGE' });
+});
+
 test('валидный запрос проходит, преобразования Zod сохраняются', async ({
   http,
 }) => {
