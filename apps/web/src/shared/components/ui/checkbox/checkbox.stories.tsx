@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import type { ComponentProps } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Label } from '../Label/label'
+import { Label } from '../label/label'
 import { Checkbox } from './checkbox'
 
 type CheckboxStoryProps = Omit<ComponentProps<typeof Checkbox>, 'aria-label'> & {

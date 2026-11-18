@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import type { ComponentProps } from 'react'
 import { useTranslation } from 'react-i18next'
 import { cn } from 'cn'
-import { Input } from '../Input/input'
+import { Input } from '../input/input'
 import { Label } from './label'
 
 function LabelStory(props: ComponentProps<typeof Label>) {

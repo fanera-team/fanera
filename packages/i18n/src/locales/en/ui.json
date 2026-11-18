@@ -31,5 +31,34 @@
   "theme": {
     "light": "Light theme",
     "dark": "Dark theme"
+  },
+  "confirmDialog": {
+    "confirm": "Delete",
+    "cancel": "Cancel",
+    "deleteBoardTrigger": "Delete board",
+    "deleteBoardTitle": "Delete board?",
+    "deleteBoardDescription": "The board and all its elements will be permanently deleted.",
+    "deleteBoardSuccess": "Board deleted"
+  },
+  "dialog": { "close": "Close" },
+  "toast": { "containerAriaLabel": "Notifications" },
+  "examples": {
+    "open": "Open",
+    "title": "Title",
+    "description": "Dialog description.",
+    "actions": "Actions",
+    "rename": "Rename",
+    "delete": "Delete",
+    "boardRenamed": "Board renamed",
+    "settings": "Settings",
+    "popoverContent": "Popover content",
+    "popoverText": "Custom content: forms, lists, settings.",
+    "hover": "Hover",
+    "tooltip": "Tooltip",
+    "hoverCursor": "Hover over me",
+    "boardSaved": "Board saved",
+    "saveFailed": "Failed to save",
+    "success": "Success",
+    "error": "Error"
   }
 }
