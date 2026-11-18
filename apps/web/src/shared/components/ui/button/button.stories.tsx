@@ -52,12 +52,21 @@ export const WithIcon: Story = {
   render: (args) => <ButtonStory labelKey="stories.button.createBoard" icon={<Plus />} {...args} />,
 }
 
-export const Large: Story = {
-  args: { size: 'lg' },
-  render: (args) => <ButtonStory labelKey="stories.button.signIn" {...args} />,
+export const Loading: Story = {
+  args: { loading: true },
+  render: (args) => <ButtonStory labelKey="stories.button.createBoard" {...args} />,
 }
 
 export const Disabled: Story = {
   args: { disabled: true },
   render: (args) => <ButtonStory labelKey="stories.button.unavailable" {...args} />,
+}
+
+export const Sizes: Story = {
+  render: () => (
+    <div className="gap-3 flex flex-col items-start">
+      <ButtonStory labelKey="stories.button.signIn" size="lg" />
+      <ButtonStory labelKey="stories.button.createBoard" />
+    </div>
+  ),
 }
