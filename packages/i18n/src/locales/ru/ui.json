@@ -26,7 +26,10 @@
       "emailLabel": "Email",
       "emailPlaceholder": "name@example.com",
       "boardSelect": "Выбрать доску",
-      "boardDescription": "Описание доски"
+      "boardDescription": "Описание доски",
+      "selectAll": "Выбрать все доски",
+      "boardOne": "Доска 1",
+      "boardTwo": "Доска 2"
     }
   },
   "theme": {

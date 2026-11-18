@@ -26,7 +26,10 @@
       "emailLabel": "Email",
       "emailPlaceholder": "name@example.com",
       "boardSelect": "Select a board",
-      "boardDescription": "Board description"
+      "boardDescription": "Board description",
+      "selectAll": "Select all boards",
+      "boardOne": "Board one",
+      "boardTwo": "Board two"
     }
   },
   "theme": {

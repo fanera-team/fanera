@@ -2,10 +2,15 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 import { Checkbox } from './checkbox'
+import { CheckboxGroup } from '@base-ui/react'
 
 const SELECT_BOARD = 'Выбрать доску'
 const BEFORE = 'Поле до флажка'
 const AFTER = 'Поле после флажка'
+
+const GROUP_PARENT = 'Выбрать все доски'
+const GROUP_FIRST = 'Доска 1'
+const GROUP_SECOND = 'Доска 2'
 
 describe('Checkbox', () => {
   it('переключается по клику', async () => {
@@ -48,5 +53,27 @@ describe('Checkbox', () => {
 
     expect(after).toHaveFocus()
     expect(checkbox).not.toHaveFocus()
+  })
+
+  it('родительский флажок смешанный, когда выбран один дочерний', async () => {
+    const user = userEvent.setup()
+
+    render(
+      <CheckboxGroup defaultValue={['board-one']} allValues={['board-one', 'board-two']}>
+        <Checkbox parent aria-label={GROUP_PARENT} />
+        <Checkbox value="board-one" aria-label={GROUP_FIRST} />
+        <Checkbox value="board-two" aria-label={GROUP_SECOND} />
+      </CheckboxGroup>,
+    )
+
+    const parent = screen.getByRole('checkbox', { name: GROUP_PARENT })
+
+    expect(parent).toHaveAttribute('aria-checked', 'mixed')
+
+    await user.click(screen.getByRole('checkbox', { name: GROUP_FIRST }))
+    expect(parent).toHaveAttribute('aria-checked', 'false')
+
+    await user.click(parent)
+    expect(parent).toHaveAttribute('aria-checked', 'true')
   })
 })
