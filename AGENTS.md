@@ -82,13 +82,13 @@ Fanera — командный проект курса Ulbi TV (3 поток). Ц
 
 Монорепозиторий на pnpm workspaces.
 
-| Путь                 | Что это                                                   |
-| -------------------- | --------------------------------------------------------- |
-| `apps/web`           | Фронтенд: React + Vite, Feature-Sliced Design             |
-| `apps/server`        | Бэкенд: NestJS (см. [README](apps/server/README.md))      |
-| `packages/*`         | Общий код фронта и бэка (пока пусто, в плане `contracts`) |
-| `docs/system-design` | System design: требования, архитектура, API, решения      |
-| `docs/design`        | Ссылка на макеты Penpot, темы и токены интерфейса         |
+| Путь                 | Что это                                                             |
+| -------------------- | ------------------------------------------------------------------- |
+| `apps/web`           | Фронтенд: React + Vite, Feature-Sliced Design                       |
+| `apps/server`        | Бэкенд: NestJS (см. [README](apps/server/README.md))                |
+| `packages/*`         | Общий код фронта и бэка: `contracts` (zod-схемы), `i18n` (переводы) |
+| `docs/system-design` | System design: требования, архитектура, API, решения                |
+| `docs/design`        | Ссылка на макеты Penpot, темы и токены интерфейса                   |
 
 ### Стек
 
@@ -104,9 +104,12 @@ Fanera — командный проект курса Ulbi TV (3 поток). Ц
 - Сейчас есть: NestJS 12 (ESM, Express), Zod для валидации и конфига, Vitest, oxlint, Prisma 7 + Postgres (схема `core`), Redis (`ioredis`).
 - В плане: схема `collab`, BullMQ, socket.io + Yjs, Swagger, S3 (MinIO).
 
-#### Общее (в плане)
+#### Общее (`packages/*`)
 
-- `packages/contracts` — zod-схемы и типы, общие для фронта и бэка (задача T1-09). Изменения в нём потенциально ломают и фронт, и бэк: обсуждай это явно.
+- Сейчас есть:
+  - `packages/contracts` — zod-схемы и типы, общие для фронта и бэка: пока `Problem` и `FieldError`; пакет подключён к серверу.
+  - `packages/i18n` — переводы интерфейса (`ru` и `en`); фронт импортирует их через `@fanera/i18n`.
+- В плане: схемы auth и остальные контракты в `contracts`, подключение `contracts` на фронте (задача T1-09). Изменения в общих пакетах потенциально ломают и фронт, и бэк: обсуждай это явно.
 
 Версии React, Vite, NestJS, TypeScript и других библиотек могут быть новее, чем в твоих данных обучения. Сверяйся с официальной документацией и с `node_modules`, а не с памятью.
 
@@ -117,9 +120,10 @@ Fanera — командный проект курса Ulbi TV (3 поток). Ц
 - Feature-Sliced Design, проверяется ESLint (`@conarti/eslint-plugin-feature-sliced`): импорты только сверху вниз по слоям (app → pages → widgets → features → entities → shared); из слайса импортируем только через его public API (`index.ts`).
 - Визуальный источник — [дизайн Fanera](docs/design/design.md) и [макеты Penpot](docs/design/README.md#источник-макетов). Для новых экранов используем «Холодный графит» и Montserrat. Актуальные экраны и токены хранятся в облачном файле Penpot.
 - Экраны верстаем по макетам Penpot и собираем повторяемые элементы из компонентов `apps/web/src/shared/components/ui`; соблюдаем public API слайсов и границы слоёв FSD.
+- Новый вид элемента — это новый `variant` в `cva` внутри компонента, а не набор классов в `className` на месте использования. Если вид нужен второй раз, он переезжает в `variants`; если такого вида нет в макете — сначала вопрос к дизайнеру, потом код. Имена вариантов повторяют названия из Penpot (`primary`, `secondary`, `outline`, `destructive`).
 - Уведомления показываем только через `Toast` из `shared/components/ui`, деструктивные действия подтверждаем только через `ConfirmDialog` — без нативных `alert` и `confirm`.
 - Токены светлой и тёмной тем лежат в [CSS-теме](apps/web/src/shared/styles/globals.css). Цвета интерфейса задаём только через смысловые токены темы: `bg-primary`, а не `bg-blue-500` или `bg-[#3b82f6]`. Компоненты shadcn/ui адаптируем под тему Fanera, не используем их готовую палитру.
-- Тема переключается через `ThemeToggle` из `apps/web/src/shared/components/ui`. Каждый новый UI-компонент проверяем в светлой и тёмной теме, в том числе в Storybook.
+- Тема переключается через `ThemeToggle` из `apps/web/src/shared/components/ui`. У каждого нового и изменённого компонента в `shared/components/ui` story и тест лежат рядом с файлом: `button/button.tsx`, `button/button.stories.tsx`, `button/button.test.tsx`. Стори показывает состояния из макета в светлой и тёмной темах, тест проверяет поведение (клик, недоступность, вывод ошибки), а не классы и не стили.
 - Где живёт состояние ([frontend.md §1](docs/system-design/frontend.md)): данные сервера — TanStack Query, содержимое доски — только `Y.Doc`, курсоры — Awareness вне React-дерева, UI — Zustand. Не смешивать.
 - Частые события холста (движение курсора, drag) не должны вызывать ререндер всего дерева.
 - Без `any`: если тип неизвестен, используем `unknown` и сужаем тип; если без `any` никак, оставляем комментарий с причиной.

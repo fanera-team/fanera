@@ -26,7 +26,8 @@ pnpm dev:server
 - `src/configure-app.ts` — всё, что настраивается на уровне приложения: префикс `/api`, helmet, CORS, глобальная валидация. Его же вызывают e2e-тесты, поэтому новые глобальные настройки добавляются сюда, а не в `main.ts`.
 - `src/config/env.schema.ts` — Zod-схема переменных окружения. Проверяется при старте: с некорректным `.env` сервер не запустится и напишет, что не так.
 - `src/app.module.ts` — корневой модуль, подключает модули фич.
-- `src/infra/` — подключения к внешним сервисам: `prisma/` (`PrismaService`, Postgres через Prisma), `redis/` (`ioredis`).
+- `src/common/` — сквозные вещи, не принадлежащие фичам: `filters/` (ошибки HTTP → `Problem`) и `pipes/` (Zod-валидация входных данных).
+- `src/infra/` — подключения к внешним сервисам: `prisma/` (`PrismaService`, Postgres через Prisma), `redis/` (`ioredis`), `logger.ts` (JSON при `NODE_ENV=production`, текст локально; секреты маскируются).
 - `prisma/` — схема БД (`schema.prisma`), миграции и seed. `prisma7.config.ts` — настройки Prisma CLI.
 - `src/generated/prisma/` — сгенерированный клиент Prisma, в git не хранится.
 - `src/health/` — `GET /health`: пингует Postgres и Redis с таймаутом 2 с; `200` — всё доступно, `503` — нет.

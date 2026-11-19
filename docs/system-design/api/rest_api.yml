@@ -1178,7 +1178,7 @@ components:
     Problem:
       type: object
       properties:
-        type: { type: string, example: 'https://api.example.com/problems/forbidden' }
+        type: { type: string, example: 'about:blank' }
         title: { type: string }
         status: { type: integer }
         detail: { type: string }
