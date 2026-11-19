@@ -34,7 +34,7 @@ function UncontrolledTestTooltip() {
 describe('Tooltip', () => {
   it('рендерит подсказку в открытом состоянии', async () => {
     render(<TestTooltip />)
-    expect(await screen.findByText('Tooltip')).toBeInTheDocument()
+    expect(await screen.findByRole('tooltip')).toHaveTextContent('Tooltip')
   })
 
   it('закрывается по Esc', async () => {

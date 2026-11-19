@@ -30,6 +30,17 @@
       "selectAll": "Select all boards",
       "boardOne": "Board one",
       "boardTwo": "Board two"
+    },
+    "overlays": {
+      "duplicate": "Duplicate",
+      "share": "Share",
+      "export": "Export",
+      "viewSettings": "View settings",
+      "viewDescription": "Configure board display",
+      "showGrid": "Show grid",
+      "zoom": "Zoom",
+      "apply": "Apply",
+      "boardSettings": "Board settings"
     }
   },
   "theme": {
@@ -45,7 +56,22 @@
     "deleteBoardSuccess": "Board deleted"
   },
   "dialog": { "close": "Close" },
-  "toast": { "containerAriaLabel": "Notifications" },
+  "toast": {
+    "containerAriaLabel": "Notifications",
+    "close": "Close notification",
+    "titles": {
+      "info": "Information",
+      "warning": "Warning",
+      "error": "Error",
+      "success": "Success"
+    },
+    "examples": {
+      "info": "Changes are saved automatically. You can keep working on the board.",
+      "warning": "With a weak connection, updates may reach colleagues later.",
+      "error": "Could not save changes. Check your connection and try again.",
+      "success": "Changes saved"
+    }
+  },
   "examples": {
     "open": "Open",
     "title": "Title",

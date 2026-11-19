@@ -5,6 +5,12 @@ export { Input } from './input/input'
 export { Textarea } from './textarea/textarea'
 export { Label } from './label/label'
 export { ConfirmDialog } from './confirm-dialog/confirm-dialog'
+export type {
+  DialogContentProps,
+  DialogFooterAction,
+  DialogProps,
+  DialogSize,
+} from './dialog/dialog'
 export {
   Dialog,
   DialogClose,
@@ -35,6 +41,7 @@ export {
   DropdownMenuTrigger,
 } from './dropdown-menu/dropdown-menu'
 export { Icon } from './icon/icon'
+export type { IconName } from './icon/icon'
 export { LanguageToggle } from './language-toggle/language-toggle'
 export { Logo } from './logo/logo'
 export {
@@ -46,6 +53,8 @@ export {
   PopoverTrigger,
 } from './popover/popover'
 export { SegmentedToggle } from './segmented-toggle/segmented-toggle'
+export { Spinner } from './spinner/spinner'
+export { Switch } from './switch/switch'
 export { Toaster } from './sonner/sonner'
 export { toast } from './toast/toast'
 export { ThemeToggle } from './theme-toggle/theme-toggle'
