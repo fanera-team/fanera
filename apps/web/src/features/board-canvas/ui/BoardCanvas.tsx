@@ -1,8 +1,11 @@
+import { ElementRenderer, createRectangleElement } from '@/entities/element'
 import { useCanvasInteraction } from '../lib/useCanvasInteraction'
-import { Stage, Layer, Rect } from 'react-konva'
+import { Stage, Layer } from 'react-konva'
 
 export function BoardCanvas() {
   const { camera, cursor, handlers } = useCanvasInteraction()
+
+  const rect = createRectangleElement({ x: 0, y: 0 })
 
   return (
     <Stage
@@ -13,7 +16,7 @@ export function BoardCanvas() {
       {...handlers}
     >
       <Layer x={camera.x} y={camera.y} scaleX={camera.scale} scaleY={camera.scale}>
-        <Rect width={30} height={30} id="1" fill={'yellow'} />
+        <ElementRenderer element={rect} />
       </Layer>
     </Stage>
   )
