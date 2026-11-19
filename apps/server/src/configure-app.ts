@@ -1,10 +1,9 @@
-import {
-  StandardSchemaValidationPipe,
-  type INestApplication,
-} from '@nestjs/common';
+import type { INestApplication } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import helmet from 'helmet';
 import type { Env } from './config/env.schema.js';
+import { HttpProblemFilter } from './common/filters/http-problem.filter.js';
+import { ProblemValidationPipe } from './common/pipes/problem-validation.pipe.js';
 
 export function configureApp(app: INestApplication): void {
   const config = app.get<ConfigService<Env, true>>(ConfigService);
@@ -20,6 +19,9 @@ export function configureApp(app: INestApplication): void {
     credentials: true,
   });
 
-  // Валидация по Zod-схеме из @Body({ schema }) и т.п., иначе 400
-  app.useGlobalPipes(new StandardSchemaValidationPipe());
+  // Ошибки HTTP-запросов → Problem Details; подробности 5xx — только в логах.
+  app.useGlobalFilters(new HttpProblemFilter());
+
+  // Zod-схемы из @Body/@Param/@Query; ошибки валидации → 422 с путями полей.
+  app.useGlobalPipes(new ProblemValidationPipe());
 }

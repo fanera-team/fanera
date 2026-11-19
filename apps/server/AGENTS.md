@@ -5,12 +5,14 @@
 ## Правила
 
 - **Тесты:** `pnpm test` не запускает e2e — перед «готово» прогоняй ещё `pnpm test:e2e`.
-- **Глобальные настройки приложения** (middleware, пайпы, CORS...) добавлять в `src/configure-app.ts`, а не в `main.ts` — его же используют e2e-тесты.
+- **Глобальные настройки приложения** (middleware, пайпы, CORS...) добавлять в `src/configure-app.ts`, а не в `main.ts` — его же используют e2e-тесты. Исключение — логгер: JSON в выводе тестов только мешает.
 - **Окружение:** новая переменная → `src/config/env.schema.ts` и `.env.example`. Читать через `ConfigService<Env, true>` и `config.get('NAME', { infer: true })`, не через `process.env`.
 - **Валидация:** только Zod через `@Body({ schema })`, `@Param('id', { schema })`, `@Query({ schema })`; тип DTO — `z.infer`. Не `class-validator`.
 - **ESM:** `import.meta.dirname` вместо `__dirname` — `tsc` это не ловит, а в рантайме будет `ReferenceError`. Примеры из интернета обычно под CJS/Jest — адаптируй.
 - **DI:** внедряемые через конструктор классы импортировать обычным `import`, не `import type` — иначе пропадут метаданные и DI сломается.
 - **Ошибки:** для ожидаемых ситуаций — исключения Nest (`NotFoundException`...), не `new Error()`: иначе клиент получит 500.
+- **Структура модуля:** папка фичи `src/<фича>/` — `<фича>.module.ts`, транспорт (`*.controller.ts` / `*.gateway.ts` / `*.processor.ts`) → `<фича>.service.ts` → `<фича>.repository.ts`; DTO — Zod-схемы и `z.infer`. В контроллере/гейтвее нет бизнес-логики, репозиторий не знает про HTTP. Минимальный эталон — `health/`.
+- **Логи:** только через `Logger` Nest; `createLogger()` из `src/infra/logger.ts` пишет JSON при `NODE_ENV=production` (для Loki) и обычный текст в остальных режимах. В проде `NODE_ENV` выставляет окружение. Пароли, токены, `passwordHash` и тела запросов в логи не пишем; `redact` — страховка, а не разрешение.
 
 ## Зависимости
 
