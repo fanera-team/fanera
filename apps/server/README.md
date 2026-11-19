@@ -7,7 +7,7 @@ API Fanera на NestJS 12 (ESM, Express, Zod, Vitest).
 Из корня репозитория:
 
 ```bash
-docker compose up -d                          # Postgres и Redis
+docker compose up -d --wait                   # Postgres и Redis, ждёт healthcheck
 cp apps/server/.env.example apps/server/.env
 pnpm --filter server db:migrate:deploy        # таблицы
 pnpm --filter server db:seed                  # тестовые данные
@@ -17,7 +17,7 @@ pnpm dev:server
 
 Сервер стартует и без Postgres/Redis (в лог пишет предупреждение), но `/health` тогда отвечает `503` и показывает, что недоступно.
 
-Проверки: `pnpm lint`, `pnpm typecheck`, `pnpm test` (unit), `pnpm test:e2e` (e2e запускаются отдельно и нужен Postgres: `docker compose up -d`).
+Проверки: `pnpm lint`, `pnpm typecheck`, `pnpm test` (unit), `pnpm test:e2e` (e2e запускаются отдельно и нужен Postgres: `docker compose up -d --wait`).
 Отладка: `pnpm start:debug`, затем в VS Code — «Attach to Node Process».
 
 ## Как устроено

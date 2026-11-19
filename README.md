@@ -19,8 +19,7 @@ pnpm --filter web dev
 Нужен Docker (Docker Desktop или OrbStack). Из корня репозитория:
 
 ```bash
-docker compose up -d                            # Postgres и Redis в фоне
-docker compose ps                               # дождаться статуса healthy
+docker compose up -d --wait                     # Postgres и Redis в фоне, ждёт healthcheck
 cp apps/server/.env.example apps/server/.env
 pnpm --filter server db:migrate:deploy          # создать таблицы
 pnpm --filter server db:seed                    # тестовые пользователи
