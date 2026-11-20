@@ -1,8 +1,8 @@
 import { useTranslation } from 'react-i18next'
 import { useThemeStore } from '@/shared/lib/theme-store'
 import { Moon, Sun } from 'lucide-react'
-import { Icon } from './icon'
-import { SegmentedToggle } from './segmented-toggle'
+import { Icon } from '..'
+import { SegmentedToggle } from '../segmented-toggle/segmented-toggle'
 
 export function ThemeToggle() {
   const { t } = useTranslation('ui')

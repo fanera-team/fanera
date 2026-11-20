@@ -13,8 +13,56 @@
       "en": "EN"
     }
   },
+  "stories": {
+    "button": {
+      "createBoard": "Create board",
+      "add": "Add",
+      "cancel": "Cancel",
+      "delete": "Delete",
+      "signIn": "Sign in",
+      "unavailable": "Unavailable"
+    },
+    "field": {
+      "emailLabel": "Email",
+      "emailPlaceholder": "name@example.com",
+      "boardSelect": "Select a board",
+      "boardDescription": "Board description",
+      "selectAll": "Select all boards",
+      "boardOne": "Board one",
+      "boardTwo": "Board two"
+    }
+  },
   "theme": {
     "light": "Light theme",
     "dark": "Dark theme"
+  },
+  "confirmDialog": {
+    "confirm": "Delete",
+    "cancel": "Cancel",
+    "deleteBoardTrigger": "Delete board",
+    "deleteBoardTitle": "Delete board?",
+    "deleteBoardDescription": "The board and all its elements will be permanently deleted.",
+    "deleteBoardSuccess": "Board deleted"
+  },
+  "dialog": { "close": "Close" },
+  "toast": { "containerAriaLabel": "Notifications" },
+  "examples": {
+    "open": "Open",
+    "title": "Title",
+    "description": "Dialog description.",
+    "actions": "Actions",
+    "rename": "Rename",
+    "delete": "Delete",
+    "boardRenamed": "Board renamed",
+    "settings": "Settings",
+    "popoverContent": "Popover content",
+    "popoverText": "Custom content: forms, lists, settings.",
+    "hover": "Hover",
+    "tooltip": "Tooltip",
+    "hoverCursor": "Hover over me",
+    "boardSaved": "Board saved",
+    "saveFailed": "Failed to save",
+    "success": "Success",
+    "error": "Error"
   }
 }

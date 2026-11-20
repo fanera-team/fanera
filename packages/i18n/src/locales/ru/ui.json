@@ -13,8 +13,56 @@
       "en": "EN"
     }
   },
+  "stories": {
+    "button": {
+      "createBoard": "Создать доску",
+      "add": "Добавить",
+      "cancel": "Отмена",
+      "delete": "Удалить",
+      "signIn": "Войти",
+      "unavailable": "Недоступно"
+    },
+    "field": {
+      "emailLabel": "Email",
+      "emailPlaceholder": "name@example.com",
+      "boardSelect": "Выбрать доску",
+      "boardDescription": "Описание доски",
+      "selectAll": "Выбрать все доски",
+      "boardOne": "Доска 1",
+      "boardTwo": "Доска 2"
+    }
+  },
   "theme": {
     "light": "Светлая тема",
     "dark": "Тёмная тема"
+  },
+  "confirmDialog": {
+    "confirm": "Удалить",
+    "cancel": "Отмена",
+    "deleteBoardTrigger": "Удалить доску",
+    "deleteBoardTitle": "Удалить доску?",
+    "deleteBoardDescription": "Доска и все её элементы будут удалены безвозвратно.",
+    "deleteBoardSuccess": "Доска удалена"
+  },
+  "dialog": { "close": "Закрыть" },
+  "toast": { "containerAriaLabel": "Уведомления" },
+  "examples": {
+    "open": "Открыть",
+    "title": "Заголовок",
+    "description": "Описание диалога.",
+    "actions": "Действия",
+    "rename": "Переименовать",
+    "delete": "Удалить",
+    "boardRenamed": "Доска переименована",
+    "settings": "Настройки",
+    "popoverContent": "Содержимое поповера",
+    "popoverText": "Произвольный контент: формы, списки, настройки.",
+    "hover": "Наведи",
+    "tooltip": "Подсказка",
+    "hoverCursor": "Наведи курсор",
+    "boardSaved": "Доска сохранена",
+    "saveFailed": "Не удалось сохранить",
+    "success": "Успех",
+    "error": "Ошибка"
   }
 }
