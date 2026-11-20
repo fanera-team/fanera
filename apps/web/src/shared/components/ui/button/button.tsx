@@ -22,6 +22,7 @@ const buttonVariants = cva(
         l: "h-12 gap-2 px-4 [&_svg:not([class*='size-'])]:size-6",
         'icon-s': "size-8 [&_svg:not([class*='size-'])]:size-4",
         'icon-m': "size-10 [&_svg:not([class*='size-'])]:size-5",
+        'icon-board': "size-11 [&_svg:not([class*='size-'])]:size-5",
         'icon-l': "size-12 [&_svg:not([class*='size-'])]:size-6",
         // Keep existing public names for callers that have not migrated yet.
         default: "h-10 gap-2 px-4 [&_svg:not([class*='size-'])]:size-5",

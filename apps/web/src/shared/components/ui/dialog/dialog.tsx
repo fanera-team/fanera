@@ -87,6 +87,7 @@ function DialogContent({
   draggable = false,
   footerActions,
   style,
+  ref,
   ...props
 }: DialogContentProps) {
   const { t } = useTranslation('ui')
@@ -106,26 +107,42 @@ function DialogContent({
   const offset = React.useRef({ x: 0, y: 0 })
   const previousCursor = React.useRef<string | null>(null)
   const position = (x: number, y: number) => `translate(${x}px, ${y}px)`
-  React.useLayoutEffect(() => {
-    if (popupRef.current)
-      popupRef.current.style.transform = position(offset.current.x, offset.current.y)
-  })
-  const restoreCursor = () => {
+  const restoreCursor = React.useCallback(() => {
     if (previousCursor.current !== null) {
       document.documentElement.style.cursor = previousCursor.current
       previousCursor.current = null
     }
-  }
+  }, [])
+  const setPopupRef = React.useCallback(
+    (popup: HTMLDivElement | null) => {
+      popupRef.current = popup
+      if (!popup) {
+        drag.current = null
+        offset.current = { x: 0, y: 0 }
+        restoreCursor()
+      }
+    },
+    [restoreCursor],
+  )
+  const mergedRef = React.useCallback(
+    (popup: HTMLDivElement | null) => {
+      setPopupRef(popup)
+      if (typeof ref === 'function') ref(popup)
+      else if (ref) ref.current = popup
+    },
+    [ref, setPopupRef],
+  )
   React.useEffect(
     () => () => {
       restoreCursor()
     },
-    [],
+    [restoreCursor],
   )
   const handlers: DragHandlers = {
     onPointerDown: (event) => {
       if (
         !draggable ||
+        drag.current ||
         event.button !== 0 ||
         (event.target instanceof Element &&
           event.target.closest(
@@ -191,7 +208,7 @@ function DialogContent({
     <DialogPortal>
       {modal && <DialogOverlay />}
       <DialogPrimitive.Popup
-        ref={popupRef}
+        ref={mergedRef}
         data-slot="dialog-content"
         data-size={size}
         data-auto-height={autoHeight}
@@ -203,7 +220,11 @@ function DialogContent({
           !autoHeight && 'h-[380px]',
           className,
         )}
-        style={{ ...style, translate: '-50% -50%', transform: 'translate(0px, 0px)' }}
+        style={(state) => ({
+          ...(typeof style === 'function' ? style(state) : style),
+          translate: '-50% -50%',
+          transform: 'translate(0px, 0px)',
+        })}
         {...props}
       >
         <DialogSizeContext.Provider value={size}>

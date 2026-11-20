@@ -13,6 +13,47 @@
       "en": "EN"
     }
   },
+  "navigation": {
+    "openSidebar": "Открыть боковую панель",
+    "closeSidebar": "Закрыть боковую панель",
+    "pinSidebar": "Закрепить боковую панель",
+    "unpinSidebar": "Открепить боковую панель",
+    "sidebar": "Навигация",
+    "home": "Главная",
+    "spaces": "Пространства",
+    "createSpace": "Создать пространство",
+    "userMenu": "Меню пользователя",
+    "profile": "Профиль",
+    "settings": "Настройки",
+    "signOut": "Выйти"
+  },
+  "board": {
+    "toolbar": "Инструменты доски",
+    "toolShortcut": "{{tool}} · {{shortcut}}",
+    "tools": {
+      "select": "Выбор",
+      "sticky": "Стикер",
+      "text": "Текст",
+      "shape": "Фигура",
+      "arrow": "Стрелка"
+    },
+    "sticky": {
+      "title": "Стикер",
+      "colorLabel": "Цвет нового стикера"
+    },
+    "colors": {
+      "yellow": "Жёлтый",
+      "pink": "Розовый",
+      "green": "Зелёный",
+      "blue": "Синий"
+    },
+    "zoom": {
+      "label": "Масштаб доски",
+      "out": "Уменьшить масштаб",
+      "in": "Увеличить масштаб",
+      "fitAll": "Показать всё"
+    }
+  },
   "stories": {
     "button": {
       "createBoard": "Создать доску",

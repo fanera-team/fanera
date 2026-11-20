@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { toast as sonnerToast } from 'sonner'
 import { i18n } from '@/shared/lib/i18n'
 import { Toaster } from '../sonner/sonner'
 import { toast } from './toast'
@@ -31,6 +32,7 @@ function ToastDemo({ onDismiss }: { onDismiss?: () => void }) {
 
 describe('Toast', () => {
   beforeEach(async () => {
+    sonnerToast.dismiss()
     await i18n.changeLanguage('en')
   })
 
@@ -65,20 +67,15 @@ describe('Toast', () => {
     render(<ToastDemo onDismiss={onDismiss} />)
 
     await user.click(screen.getByRole('button', { name: i18n.t('toast.titles.info') }))
-    const notification = screen
-      .getAllByText(i18n.t('toast.examples.info'))
-      .find(
-        (element) => element.closest('[data-sonner-toast]')?.getAttribute('data-front') === 'true',
-      )
-      ?.closest('[role="status"]')
+    const notification = (await screen.findByText(i18n.t('toast.examples.info'))).closest(
+      '[role="status"]',
+    )
     expect(notification).toBeInstanceOf(HTMLElement)
     fireEvent.click(
       within(notification as HTMLElement).getByRole('button', { name: i18n.t('toast.close') }),
     )
 
     await waitFor(() => expect(onDismiss).toHaveBeenCalledOnce())
-    await waitFor(() => {
-      expect(notification?.closest('[data-sonner-toast]')).not.toBeInTheDocument()
-    })
+    await waitFor(() => expect(screen.queryByText(i18n.t('toast.examples.info'))).toBeNull())
   })
 })

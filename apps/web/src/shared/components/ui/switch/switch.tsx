@@ -6,10 +6,12 @@ function Switch({ className, ...props }: SwitchPrimitive.Root.Props) {
   return (
     <SwitchPrimitive.Root
       data-slot="switch"
-      className={cn(
-        'h-7 w-12 border-border bg-muted data-checked:border-primary data-checked:bg-primary focus-visible:ring-ring focus-visible:ring-offset-background data-disabled:border-disabled-border data-disabled:bg-disabled inline-flex shrink-0 items-center rounded-full border px-[3px] transition-colors outline-none focus-visible:ring-2 focus-visible:ring-offset-2 data-disabled:cursor-not-allowed',
-        className,
-      )}
+      className={(state) =>
+        cn(
+          'h-7 w-12 border-border bg-muted data-checked:border-primary data-checked:bg-primary focus-visible:ring-ring focus-visible:ring-offset-background data-disabled:border-disabled-border data-disabled:bg-disabled inline-flex shrink-0 items-center rounded-full border px-[3px] transition-colors outline-none focus-visible:ring-2 focus-visible:ring-offset-2 data-disabled:cursor-not-allowed',
+          typeof className === 'function' ? className(state) : className,
+        )
+      }
       {...props}
     >
       <SwitchPrimitive.Thumb

@@ -58,4 +58,17 @@ describe('Switch', () => {
     await user.tab()
     expect(screen.getByRole('button', { name: AFTER })).toHaveFocus()
   })
+
+  it('передаёт состояние в функцию className', async () => {
+    const user = userEvent.setup()
+    const className = vi.fn(({ checked }: { checked: boolean }) =>
+      checked ? 'custom-on' : 'custom-off',
+    )
+    render(<Switch aria-label={NAME} className={className} />)
+    const control = screen.getByRole('switch', { name: NAME })
+    expect(control).toHaveClass('custom-off')
+    await user.click(control)
+    expect(control).toHaveClass('custom-on')
+    expect(className).toHaveBeenCalledWith(expect.objectContaining({ checked: true }))
+  })
 })

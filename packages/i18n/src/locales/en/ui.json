@@ -13,6 +13,47 @@
       "en": "EN"
     }
   },
+  "navigation": {
+    "openSidebar": "Open sidebar",
+    "closeSidebar": "Close sidebar",
+    "pinSidebar": "Pin sidebar",
+    "unpinSidebar": "Unpin sidebar",
+    "sidebar": "Navigation",
+    "home": "Home",
+    "spaces": "Spaces",
+    "createSpace": "Create space",
+    "userMenu": "User menu",
+    "profile": "Profile",
+    "settings": "Settings",
+    "signOut": "Sign out"
+  },
+  "board": {
+    "toolbar": "Board tools",
+    "toolShortcut": "{{tool}} · {{shortcut}}",
+    "tools": {
+      "select": "Select",
+      "sticky": "Sticky note",
+      "text": "Text",
+      "shape": "Shape",
+      "arrow": "Arrow"
+    },
+    "sticky": {
+      "title": "Sticky note",
+      "colorLabel": "New sticky note color"
+    },
+    "colors": {
+      "yellow": "Yellow",
+      "pink": "Pink",
+      "green": "Green",
+      "blue": "Blue"
+    },
+    "zoom": {
+      "label": "Board zoom",
+      "out": "Zoom out",
+      "in": "Zoom in",
+      "fitAll": "Fit all"
+    }
+  },
   "stories": {
     "button": {
       "createBoard": "Create board",
