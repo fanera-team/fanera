@@ -12,13 +12,14 @@
     "start:prod": "node dist/main",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "lint": "oxlint --type-aware src/ test/",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "test:cov": "vitest run --coverage",
-    "test:e2e": "vitest run --config ./vitest.config.e2e.ts",
-    "typecheck": "tsc --noEmit"
+    "test": "pnpm --filter @fanera/contracts build && vitest run",
+    "test:watch": "pnpm --filter @fanera/contracts build && vitest",
+    "test:cov": "pnpm --filter @fanera/contracts build && vitest run --coverage",
+    "test:e2e": "pnpm --filter @fanera/contracts build && vitest run --config ./vitest.config.e2e.ts",
+    "typecheck": "pnpm --filter @fanera/contracts build && tsc --noEmit"
   },
   "dependencies": {
+    "@fanera/contracts": "workspace:*",
     "@nestjs/common": "^12.0.1",
     "@nestjs/config": "^12.1.1",
     "@nestjs/core": "^12.0.1",

@@ -449,7 +449,9 @@ COMMIT;
 | Бизнес | активные доски, созданные доски в день, DAU (из логов входа) |
 | Инфраструктура | node_exporter (CPU, RAM, диск, сеть), cAdvisor (контейнеры), postgres_exporter (connections, replication lag, slow queries), redis_exporter |
 
-**Логи (pino → stdout → promtail → Loki):**
+**Логи (JSON в stdout → promtail → Loki):**
+
+Пишем встроенным `ConsoleLogger` Nest (`json: true`, `structuredParams`, `redact` для паролей и токенов). pino добавим, если понадобятся возможности, которых нет во встроенном логгере.
 
 - только JSON с `requestId`, `userId`, `boardId`, `socketId`, `instanceId`;
 - **не логируем** курсоры и каждую правку (90% трафика и мусор), содержимое досок и комментариев, токены и пароли;
