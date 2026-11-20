@@ -72,4 +72,21 @@ describe('Database (e2e)', () => {
     );
     await expect(duplicate).rejects.toMatchObject({ code: 'P2002' });
   });
+
+  it('сравнивает email без учёта регистра (citext)', async () => {
+    const id = randomUUID();
+    const email = `${id}${EMAIL_DOMAIN}`;
+    const created = await prisma.user.create({
+      data: { email: `${id.toUpperCase()}${EMAIL_DOMAIN}`, name: 'Upper' },
+    });
+
+    // Находим пользователя, даже если email набран в другом регистре
+    const found = await prisma.user.findUnique({ where: { email } });
+    expect(found?.id).toBe(created.id);
+
+    // И не даём завести второй аккаунт на тот же ящик
+    await expect(
+      prisma.user.create({ data: { email, name: 'Lower' } }),
+    ).rejects.toMatchObject({ code: 'P2002' });
+  });
 });

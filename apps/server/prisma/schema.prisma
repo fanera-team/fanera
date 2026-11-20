@@ -17,7 +17,7 @@ datasource db {
 // (password_hash, avatar_key, locale и т.д.) добавит задача про регистрацию
 model User {
   id        String   @id @default(uuid(7)) @db.Uuid
-  email     String   @unique
+  email     String   @unique @db.Citext
   name      String   @db.VarChar(100)
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
 
