@@ -40,7 +40,7 @@ export function Sidebar({
       aria-label={t('navigation.sidebar')}
       data-pinned={pinned}
       className={cn(
-        'border-border bg-sidebar text-sidebar-foreground w-63 flex h-full shrink-0 flex-col border-r',
+        'border-border bg-sidebar text-sidebar-foreground w-63 flex h-dvh shrink-0 flex-col border-r',
         className,
       )}
     >

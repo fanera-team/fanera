@@ -27,6 +27,13 @@
     "settings": "Настройки",
     "signOut": "Выйти"
   },
+  "showcase": {
+    "title": "Проверка компонентов",
+    "tabsLabel": "Разделы демонстрации",
+    "boardTab": "Доска",
+    "componentsTab": "Компоненты",
+    "boardHint": "Область для проверки контролов доски. Холст пока не подключён."
+  },
   "board": {
     "toolbar": "Инструменты доски",
     "toolShortcut": "{{tool}} · {{shortcut}}",

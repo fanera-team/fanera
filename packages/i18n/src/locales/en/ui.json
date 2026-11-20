@@ -27,6 +27,13 @@
     "settings": "Settings",
     "signOut": "Sign out"
   },
+  "showcase": {
+    "title": "Component preview",
+    "tabsLabel": "Preview sections",
+    "boardTab": "Board",
+    "componentsTab": "Components",
+    "boardHint": "A place to try the board controls. The canvas is not connected yet."
+  },
   "board": {
     "toolbar": "Board tools",
     "toolShortcut": "{{tool}} · {{shortcut}}",
