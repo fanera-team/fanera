@@ -16,6 +16,22 @@ jobs:
   server:
     name: Server checks
     runs-on: ubuntu-latest
+    # Postgres для e2e: тесты накатывают миграции на базу fanera_test
+    # (адрес по умолчанию — в apps/server/test/test-database-url.ts)
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: fanera
+          POSTGRES_PASSWORD: fanera
+          POSTGRES_DB: fanera
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U fanera -d fanera"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
     steps:
       - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v6
@@ -23,6 +39,7 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: pnpm
+      # postinstall сервера запускает prisma generate: без клиента не пройдут typecheck и сборка
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       - name: Lint

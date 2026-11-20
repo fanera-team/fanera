@@ -4,26 +4,26 @@ import request from 'supertest';
 import type { App } from 'supertest/types.js';
 import { AppModule } from '../src/app.module.js';
 import { configureApp } from '../src/configure-app.js';
-import { PostgresService } from '../src/infra/postgres/postgres.service.js';
+import { PrismaService } from '../src/infra/prisma/prisma.service.js';
 import { RedisService } from '../src/infra/redis/redis.service.js';
 
-// Postgres и Redis подменяем: e2e проверяет HTTP-слой и не требует
-// поднятого docker compose. Тесты с настоящей БД появятся в #32.
-const postgres = { ping: vi.fn<() => Promise<void>>() };
+// Postgres и Redis подменяем: здесь проверяем только HTTP-слой.
+// Тесты с настоящей БД — в database.e2e-spec.ts.
+const prisma = { ping: vi.fn<() => Promise<void>>() };
 const redis = { ping: vi.fn<() => Promise<void>>() };
 
 describe('App (e2e)', () => {
   let app: INestApplication<App>;
 
   beforeEach(async () => {
-    postgres.ping.mockResolvedValue(undefined);
+    prisma.ping.mockResolvedValue(undefined);
     redis.ping.mockResolvedValue(undefined);
 
     const moduleRef = await Test.createTestingModule({
       imports: [AppModule],
     })
-      .overrideProvider(PostgresService)
-      .useValue(postgres)
+      .overrideProvider(PrismaService)
+      .useValue(prisma)
       .overrideProvider(RedisService)
       .useValue(redis)
       .compile();
