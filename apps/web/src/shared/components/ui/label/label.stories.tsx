@@ -1,7 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import type { ComponentProps } from 'react'
 import { useTranslation } from 'react-i18next'
-import { cn } from 'cn'
 import { Input } from '../input/input'
 import { Label } from './label'
 
@@ -16,16 +15,11 @@ function LabelWithInput({ disabled }: { disabled?: boolean }) {
   const id = disabled ? 'label-disabled' : 'label-with-input'
 
   return (
-    <div className={cn('flex flex-col', disabled && 'opacity-[0.45]')}>
-      <Label htmlFor={id} className="mb-2">
+    <div className="flex flex-col">
+      <Label htmlFor={id} disabled={disabled} className="mb-2">
         {t('stories.field.emailLabel')}
       </Label>
-      <Input
-        id={id}
-        placeholder={t('stories.field.emailPlaceholder')}
-        disabled={disabled}
-        className={disabled ? 'disabled:opacity-100' : undefined}
-      />
+      <Input id={id} placeholder={t('stories.field.emailPlaceholder')} disabled={disabled} />
     </div>
   )
 }
@@ -56,4 +50,8 @@ export const WithInput: Story = {
 
 export const Disabled: Story = {
   render: () => <LabelWithInput disabled />,
+}
+
+export const Required: Story = {
+  render: (args) => <LabelStory {...args} required />,
 }

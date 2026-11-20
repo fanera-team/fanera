@@ -34,7 +34,7 @@ export function SegmentedToggle<Value extends string>({
       role={label ? 'group' : undefined}
       aria-label={label}
       className={cn(
-        'h-12 gap-3 border-border bg-card pl-1 pr-1 relative inline-flex shrink-0 items-center rounded-full border',
+        'h-12 gap-3 border-border bg-card px-1 relative inline-flex w-fit shrink-0 items-center rounded-full border',
         className,
       )}
     >
@@ -49,7 +49,7 @@ export function SegmentedToggle<Value extends string>({
           key={option.value}
           type="button"
           variant="ghost"
-          size="icon"
+          size="icon-m"
           className={cn('size-10 p-0 text-primary relative z-10 rounded-full')}
           aria-label={option.label}
           aria-pressed={value === option.value}

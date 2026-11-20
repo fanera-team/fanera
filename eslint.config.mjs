@@ -6,7 +6,7 @@ import { plugin as featureSlicedPlugin } from '@conarti/eslint-plugin-feature-sl
 import { resolve } from 'node:path'
 
 export default tseslint.config(
-  { ignores: ['**/node_modules', '**/dist', '**/*.config.*'] },
+  { ignores: ['**/node_modules', '**/dist', '**/storybook-static', '**/*.config.*'] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {

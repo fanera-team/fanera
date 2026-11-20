@@ -22,4 +22,18 @@ describe('Label', () => {
 
     expect(screen.getByLabelText(EMAIL)).toBeInstanceOf(HTMLInputElement)
   })
+
+  it('помечает обязательное поле, сохраняя доступное имя без звёздочки', () => {
+    render(
+      <>
+        <Label htmlFor="email" required>
+          {EMAIL}
+        </Label>
+        <Input id="email" required />
+      </>,
+    )
+
+    expect(screen.getByText('*')).toHaveAttribute('aria-hidden', 'true')
+    expect(screen.getByRole('textbox', { name: EMAIL })).toBeRequired()
+  })
 })

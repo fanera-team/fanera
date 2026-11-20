@@ -1,7 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { useThemeStore } from '@/shared/lib/theme-store'
-import { Moon, Sun } from 'lucide-react'
-import { Icon } from '..'
+import { Icon } from '../icon/icon'
 import { SegmentedToggle } from '../segmented-toggle/segmented-toggle'
 
 export function ThemeToggle() {
@@ -13,8 +12,8 @@ export function ThemeToggle() {
     <SegmentedToggle
       value={theme}
       options={[
-        { value: 'light', label: t('theme.light'), content: <Icon icon={Sun} size="md" /> },
-        { value: 'dark', label: t('theme.dark'), content: <Icon icon={Moon} size="md" /> },
+        { value: 'light', label: t('theme.light'), content: <Icon name="sun" size="m" /> },
+        { value: 'dark', label: t('theme.dark'), content: <Icon name="moon" size="m" /> },
       ]}
       onValueChange={changeTheme}
     />

@@ -22,7 +22,7 @@ const meta = {
 export default meta
 type Story = StoryObj<Meta<typeof ConfirmDialog>>
 
-function DeleteBoardDemo() {
+function DeleteBoardDemo({ loading = false }: { loading?: boolean }) {
   const { t } = useTranslation('ui')
   const [open, setOpen] = useState(false)
   return (
@@ -35,6 +35,7 @@ function DeleteBoardDemo() {
         onOpenChange={setOpen}
         title={t('confirmDialog.deleteBoardTitle')}
         description={t('confirmDialog.deleteBoardDescription')}
+        loading={loading}
         onConfirm={() => {
           setOpen(false)
           toast.success(t('confirmDialog.deleteBoardSuccess'))
@@ -51,4 +52,13 @@ export const DeleteBoard: Story = {
     onConfirm: () => {},
   },
   render: () => <DeleteBoardDemo />,
+}
+
+export const Loading: Story = {
+  args: {
+    open: false,
+    onOpenChange: () => {},
+    onConfirm: () => {},
+  },
+  render: () => <DeleteBoardDemo loading />,
 }
