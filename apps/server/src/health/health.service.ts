@@ -1,14 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PostgresService } from '../infra/postgres/postgres.service.js';
 import { RedisService } from '../infra/redis/redis.service.js';
-
-export type DependencyStatus = 'up' | 'down';
-
-export interface HealthReport {
-  status: 'ok' | 'error';
-  postgres: DependencyStatus;
-  redis: DependencyStatus;
-}
+import type { DependencyStatus, HealthReport } from './dto/health.schemas.js';
 
 /** Сколько ждать ответа зависимости, прежде чем считать её недоступной. */
 export const HEALTH_CHECK_TIMEOUT_MS = 2000;

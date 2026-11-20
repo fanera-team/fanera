@@ -101,8 +101,8 @@ Fanera — командный проект курса Ulbi TV (3 поток). Ц
 
 #### Бэкенд (`apps/server`)
 
-- Сейчас есть: NestJS 12 (ESM, Express), Zod для валидации и конфига, Vitest, oxlint.
-- В плане: Prisma + Postgres (схемы `core` и `collab`), Redis, BullMQ, socket.io + Yjs, Swagger, S3 (MinIO).
+- Сейчас есть: NestJS 12 (ESM, Express), Zod для валидации и конфига, Swagger, Vitest, oxlint.
+- В плане: Prisma + Postgres (схемы `core` и `collab`), Redis, BullMQ, socket.io + Yjs, S3 (MinIO).
 
 #### Общее (`packages/*`)
 
@@ -132,6 +132,7 @@ Fanera — командный проект курса Ulbi TV (3 поток). Ц
 
 - новая фича — отдельный модуль; в контроллерах и гейтвеях нет бизнес-логики, она в сервисах;
 - валидация только через Zod, не `class-validator`;
+- каждый endpoint описываем в Swagger: тег, успешные ответы и ошибки; изменение контракта выносим в отдельный PR и сообщаем фронтенду;
 - тяжёлые операции (ИИ, файлы, компакция) — в фоне через BullMQ, не в обработчике запроса;
 - обработчики событий идемпотентны.
 
