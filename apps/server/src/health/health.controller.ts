@@ -1,4 +1,5 @@
 import { Controller, Get, HttpStatus, Res } from '@nestjs/common';
+import { healthSchema, type HealthDto } from '@fanera/contracts';
 import type { Response } from 'express';
 import { HealthService } from './health.service.js';
 
@@ -14,7 +15,10 @@ export class HealthController {
   @Get()
   async check(@Res({ passthrough: true }) response: Response) {
     const report = await this.health.check();
-    const body = { ...report, uptime: process.uptime() };
+    const body: HealthDto = healthSchema.parse({
+      ...report,
+      uptime: process.uptime(),
+    });
 
     if (report.status !== 'ok') {
       // Это диагностический отчёт, а не ошибка REST: сохраняем его тело при 503.
