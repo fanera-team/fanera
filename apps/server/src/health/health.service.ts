@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import type { DependencyStatus, HealthResponse } from '@fanera/contracts';
-import { PostgresService } from '../infra/postgres/postgres.service.js';
+import { PrismaService } from '../infra/prisma/prisma.service.js';
 import { RedisService } from '../infra/redis/redis.service.js';
 
 type HealthReport = Pick<HealthResponse, 'status' | 'postgres' | 'redis'>;
@@ -11,14 +11,14 @@ export const HEALTH_CHECK_TIMEOUT_MS = 2000;
 @Injectable()
 export class HealthService {
   constructor(
-    private readonly postgres: PostgresService,
+    private readonly prisma: PrismaService,
     private readonly redis: RedisService,
   ) {}
 
   async check(): Promise<HealthReport> {
     // Параллельно: зависший Postgres не задерживает проверку Redis
     const [postgres, redis] = await Promise.all([
-      probe(() => this.postgres.ping()),
+      probe(() => this.prisma.ping()),
       probe(() => this.redis.ping()),
     ]);
 

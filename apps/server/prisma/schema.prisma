@@ -1,0 +1,26 @@
+// Схема БД. Документация: https://pris.ly/d/prisma-schema
+// Меняется только через миграции: pnpm --filter server db:migrate
+// Таблицы и поля — по docs/system-design/database/core.dbml
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  // Р-5: core — пользователи, доски, права; collab добавим с первой его таблицей
+  schemas  = ["core"]
+}
+
+// Минимальная таблица пользователей. Остальные поля из core.dbml
+// (password_hash, avatar_key, locale и т.д.) добавит задача про регистрацию
+model User {
+  id        String   @id @default(uuid(7)) @db.Uuid
+  email     String   @unique @db.Citext
+  name      String   @db.VarChar(100)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  @@map("users")
+  @@schema("core")
+}
