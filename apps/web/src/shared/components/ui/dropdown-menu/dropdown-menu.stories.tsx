@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { Meta, StoryObj } from '@storybook/react-vite'
+import { userEvent, within } from 'storybook/test'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,6 +13,7 @@ import { ConfirmDialog } from '../confirm-dialog/confirm-dialog'
 import { Toaster } from '../sonner/sonner'
 import { toast } from '../toast/toast'
 import { useTranslation } from 'react-i18next'
+import { i18n } from '@/shared/lib/i18n'
 
 const meta = {
   title: 'Shared/UI/DropdownMenu',
@@ -43,7 +45,7 @@ function BoardActionsDemo() {
             {t('examples.rename')}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem className="text-destructive" onClick={() => setConfirmOpen(true)}>
+          <DropdownMenuItem variant="destructive" onClick={() => setConfirmOpen(true)}>
             {t('examples.delete')}
           </DropdownMenuItem>
         </DropdownMenuContent>
@@ -64,4 +66,36 @@ function BoardActionsDemo() {
 
 export const BoardActions: Story = {
   render: () => <BoardActionsDemo />,
+}
+
+function DesignSampleMenu() {
+  const { t } = useTranslation('ui')
+  return (
+    <div className="p-4 min-h-[360px]">
+      <DropdownMenu defaultOpen>
+        <DropdownMenuTrigger render={<Button variant="outline" />}>
+          {t('examples.actions')}
+        </DropdownMenuTrigger>
+        <DropdownMenuContent className="flex min-h-[300px] flex-col justify-between">
+          <DropdownMenuItem>{t('examples.rename')}</DropdownMenuItem>
+          <DropdownMenuItem>{t('stories.overlays.duplicate')}</DropdownMenuItem>
+          <DropdownMenuItem>{t('stories.overlays.share')}</DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem disabled>{t('stories.overlays.export')}</DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem variant="destructive">{t('examples.delete')}</DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
+  )
+}
+
+export const DesignSample: Story = {
+  render: () => <DesignSampleMenu />,
+  play: async () => {
+    const duplicate = await within(document.body).findByRole('menuitem', {
+      name: i18n.t('stories.overlays.duplicate', { ns: 'ui' }),
+    })
+    await userEvent.hover(duplicate)
+  },
 }

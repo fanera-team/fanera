@@ -1,17 +1,23 @@
 import * as React from 'react'
 import { cn } from 'cn'
 
-function Label({ className, ...props }: React.ComponentProps<'label'>) {
+type LabelProps = React.ComponentProps<'label'> & { required?: boolean; disabled?: boolean }
+
+function Label({ className, required, disabled, children, ...props }: LabelProps) {
   return (
     <label
       data-slot="label"
       className={cn(
-        'gap-2 text-sm leading-5 font-semibold text-foreground flex items-center select-none',
-        'group-data-[disabled=true]:pointer-events-none peer-disabled:cursor-not-allowed',
+        'gap-1 text-sm leading-5 font-medium text-foreground flex items-center select-none',
+        'group-data-[disabled=true]:text-disabled-foreground peer-disabled:text-disabled-foreground',
+        disabled && 'text-disabled-foreground cursor-not-allowed',
         className,
       )}
       {...props}
-    />
+    >
+      {children}
+      {required && <span aria-hidden="true">*</span>}
+    </label>
   )
 }
 

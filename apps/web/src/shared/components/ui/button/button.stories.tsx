@@ -65,8 +65,31 @@ export const Disabled: Story = {
 export const Sizes: Story = {
   render: () => (
     <div className="gap-3 flex flex-col items-start">
-      <ButtonStory labelKey="stories.button.signIn" size="lg" />
-      <ButtonStory labelKey="stories.button.createBoard" />
+      <ButtonStory labelKey="stories.button.signIn" size="s" />
+      <ButtonStory labelKey="stories.button.createBoard" size="m" />
+      <ButtonStory labelKey="stories.button.signIn" size="l" />
     </div>
   ),
+}
+
+function IconOnlySizesStory() {
+  const { t } = useTranslation('ui')
+
+  return (
+    <div className="gap-3 flex items-center">
+      <Button size="icon-s" aria-label={t('stories.button.add')}>
+        <Plus />
+      </Button>
+      <Button size="icon-m" aria-label={t('stories.button.add')}>
+        <Plus />
+      </Button>
+      <Button size="icon-l" aria-label={t('stories.button.add')}>
+        <Plus />
+      </Button>
+    </div>
+  )
+}
+
+export const IconOnlySizes: Story = {
+  render: () => <IconOnlySizesStory />,
 }

@@ -8,7 +8,7 @@ import { resolve } from 'node:path'
 export default tseslint.config(
   {
     // Бэкенд линтует oxlint (`pnpm lint:oxlint`), у него свой набор правил.
-    ignores: ['**/node_modules', '**/dist', '**/*.config.*', 'apps/server/**'],
+    ignores: ['**/node_modules', '**/dist', '**/storybook-static', '**/*.config.*', 'apps/server/**'],
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,

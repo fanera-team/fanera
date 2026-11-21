@@ -2,11 +2,9 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '../dialog/dialog'
-import { Button } from '../button/button'
 import { useTranslation } from 'react-i18next'
 
 type ConfirmDialogProps = {
@@ -32,20 +30,33 @@ export function ConfirmDialog({
 }: ConfirmDialogProps) {
   const { t } = useTranslation('ui')
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent showCloseButton={false}>
-        <DialogHeader>
+    <Dialog
+      open={open}
+      onOpenChange={(nextOpen) => {
+        if (!loading || nextOpen) onOpenChange(nextOpen)
+      }}
+    >
+      <DialogContent
+        size="m"
+        footerActions={[
+          {
+            label: cancelText ?? t('confirmDialog.cancel'),
+            variant: 'outline',
+            disabled: loading,
+            onClick: () => onOpenChange(false),
+          },
+          {
+            label: confirmText ?? t('confirmDialog.confirm'),
+            variant: 'destructive',
+            loading,
+            onClick: onConfirm,
+          },
+        ]}
+      >
+        <DialogHeader className="gap-9">
           <DialogTitle>{title}</DialogTitle>
           {description && <DialogDescription>{description}</DialogDescription>}
         </DialogHeader>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
-            {cancelText ?? t('confirmDialog.cancel')}
-          </Button>
-          <Button variant="destructive" onClick={onConfirm} disabled={loading}>
-            {confirmText ?? t('confirmDialog.confirm')}
-          </Button>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   )

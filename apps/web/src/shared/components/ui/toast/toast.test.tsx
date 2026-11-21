@@ -1,36 +1,81 @@
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, expect, it } from 'vitest'
-import { useTranslation } from 'react-i18next'
-import '@/shared/lib/i18n'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { toast as sonnerToast } from 'sonner'
+import { i18n } from '@/shared/lib/i18n'
 import { Toaster } from '../sonner/sonner'
 import { toast } from './toast'
 
-function ToastDemo() {
-  const { t } = useTranslation('ui')
+function ToastDemo({ onDismiss }: { onDismiss?: () => void }) {
   return (
     <>
-      <button onClick={() => toast.success(t('examples.boardSaved'))}>
-        {t('examples.success')}
+      <button onClick={() => toast.success(i18n.t('toast.examples.success'))}>
+        {i18n.t('toast.titles.success')}
       </button>
-      <button onClick={() => toast.error(t('examples.saveFailed'))}>{t('examples.error')}</button>
+      <button
+        onClick={() =>
+          toast.error(i18n.t('toast.examples.error'), { title: i18n.t('examples.saveFailed') })
+        }
+      >
+        {i18n.t('toast.titles.error')}
+      </button>
+      <button onClick={() => toast.info(i18n.t('toast.examples.info'), { onDismiss })}>
+        {i18n.t('toast.titles.info')}
+      </button>
+      <button onClick={() => toast.warning(i18n.t('toast.examples.warning'))}>
+        {i18n.t('toast.titles.warning')}
+      </button>
       <Toaster />
     </>
   )
 }
 
 describe('Toast', () => {
-  it('показывает успех', async () => {
-    const user = userEvent.setup()
-    render(<ToastDemo />)
-    await user.click(screen.getByRole('button', { name: 'Success' }))
-    expect(await screen.findByText('Board saved')).toBeInTheDocument()
+  beforeEach(async () => {
+    sonnerToast.dismiss()
+    await i18n.changeLanguage('en')
   })
 
-  it('показывает ошибку', async () => {
+  it.each([
+    ['success', 'status'],
+    ['error', 'alert'],
+    ['info', 'status'],
+    ['warning', 'status'],
+  ] as const)('показывает %s с заголовком и сообщением', async (kind, role) => {
     const user = userEvent.setup()
     render(<ToastDemo />)
-    await user.click(screen.getByRole('button', { name: 'Error' }))
-    expect(await screen.findByText('Failed to save')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: i18n.t(`toast.titles.${kind}`) }))
+
+    const notification = (await screen.findByText(i18n.t(`toast.examples.${kind}`))).closest(
+      `[role="${role}"]`,
+    )
+    expect(notification).toBeInstanceOf(HTMLElement)
+    expect(
+      within(notification as HTMLElement).getByText(
+        kind === 'error' ? i18n.t('examples.saveFailed') : i18n.t(`toast.titles.${kind}`),
+      ),
+    ).toBeInTheDocument()
+    expect(
+      within(notification as HTMLElement).getByText(i18n.t(`toast.examples.${kind}`)),
+    ).toBeInTheDocument()
+  })
+
+  it('закрывается по кнопке и вызывает onDismiss', async () => {
+    const user = userEvent.setup()
+    const onDismiss = vi.fn()
+    render(<ToastDemo onDismiss={onDismiss} />)
+
+    await user.click(screen.getByRole('button', { name: i18n.t('toast.titles.info') }))
+    const notification = (await screen.findByText(i18n.t('toast.examples.info'))).closest(
+      '[role="status"]',
+    )
+    expect(notification).toBeInstanceOf(HTMLElement)
+    fireEvent.click(
+      within(notification as HTMLElement).getByRole('button', { name: i18n.t('toast.close') }),
+    )
+
+    await waitFor(() => expect(onDismiss).toHaveBeenCalledOnce())
+    await waitFor(() => expect(screen.queryByText(i18n.t('toast.examples.info'))).toBeNull())
   })
 })

@@ -2,9 +2,9 @@ import { Avatar as AvatarPrimitive } from '@base-ui/react/avatar'
 import { cn } from '@/shared/lib/utils'
 
 const sizes = {
-  sm: 'size-6 text-[10px]',
-  md: 'size-8 text-sm',
-  lg: 'size-10 text-[17px]',
+  s: 'size-6 text-[10px]',
+  m: 'size-8 text-sm',
+  l: 'size-10 text-[17px]',
   xl: 'size-12 text-[21px]',
 } as const
 
@@ -13,7 +13,7 @@ interface AvatarProps extends Omit<AvatarPrimitive.Root.Props, 'children'> {
   size?: keyof typeof sizes
 }
 
-export function Avatar({ name, size = 'md', className, ...props }: AvatarProps) {
+export function Avatar({ name, size = 'm', className, ...props }: AvatarProps) {
   const label = name.trim()
   const initial = Array.from(label)[0]?.toLocaleUpperCase() ?? '?'
 

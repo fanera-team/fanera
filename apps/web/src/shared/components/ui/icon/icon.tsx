@@ -1,12 +1,16 @@
-import type { LucideIcon, LucideProps } from 'lucide-react'
+import type { LucideProps } from 'lucide-react'
+import { iconMap, type IconName } from './icon-map'
 
-const sizes = { sm: 16, md: 20, lg: 24 } as const
+export type { IconName } from './icon-map'
+
+const sizes = { s: 16, m: 20, l: 24 } as const
 
 interface IconProps extends Omit<LucideProps, 'size'> {
-  icon: LucideIcon
+  name: IconName
   size?: keyof typeof sizes
 }
 
-export function Icon({ icon: Glyph, size = 'md', strokeWidth = 2, ...props }: IconProps) {
+export function Icon({ name, size = 'm', strokeWidth = 2, ...props }: IconProps) {
+  const Glyph = iconMap[name]
   return <Glyph size={sizes[size]} strokeWidth={strokeWidth} aria-hidden="true" {...props} />
 }

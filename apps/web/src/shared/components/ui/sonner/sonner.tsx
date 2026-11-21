@@ -1,6 +1,7 @@
 import { Toaster as Sonner, type ToasterProps } from 'sonner'
 import { useTranslation } from 'react-i18next'
 import { useThemeStore } from '@/shared/lib/theme-store'
+import './sonner.css'
 
 export function Toaster(props: ToasterProps) {
   const { t } = useTranslation('ui')
@@ -10,7 +11,6 @@ export function Toaster(props: ToasterProps) {
     <Sonner
       containerAriaLabel={t('toast.containerAriaLabel')}
       theme={theme}
-      richColors
       position="bottom-right"
       className="toaster group"
       {...props}

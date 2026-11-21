@@ -1,0 +1,8 @@
+.toaster {
+  --width: min(408px, calc(100vw - 32px)) !important;
+  font-family: var(--font-sans);
+}
+
+.toaster [data-sonner-toast] {
+  width: 100%;
+}
