@@ -13,12 +13,15 @@ export class HealthController {
   constructor(private readonly health: HealthService) {}
 
   @Get()
-  async check(@Res({ passthrough: true }) response: Response) {
+  async check(
+    @Res({ passthrough: true }) response: Response,
+  ): Promise<HealthDto> {
     const report = await this.health.check();
-    const body: HealthDto = healthSchema.parse({
+    const payload: HealthDto = {
       ...report,
       uptime: process.uptime(),
-    });
+    };
+    const body = healthSchema.parse(payload);
 
     if (report.status !== 'ok') {
       // Это диагностический отчёт, а не ошибка REST: сохраняем его тело при 503.
