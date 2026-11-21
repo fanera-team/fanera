@@ -6,3 +6,5 @@ export {
   type FieldError,
   type Problem,
 } from './problem.js'
+export { healthSchema } from './schemas/index.js'
+export type { HealthDto } from './dto/index.js'
