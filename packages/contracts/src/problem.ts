@@ -16,7 +16,7 @@ export const fieldErrorSchema = z.object({
 export const problemSchema = z.object({
   type: z.string(),
   title: z.string(),
-  status: z.int(),
+  status: z.int().min(100).max(599),
   code: z.string(),
   detail: z.string().optional(),
   errors: z.array(fieldErrorSchema).optional(),
