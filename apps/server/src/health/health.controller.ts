@@ -1,5 +1,5 @@
 import { Controller, Get, HttpStatus, Res } from '@nestjs/common';
-import { healthSchema, type HealthDto } from '@fanera/contracts';
+import { healthSchema, type HealthResponse } from '@fanera/contracts';
 import type { Response } from 'express';
 import { HealthService } from './health.service.js';
 
@@ -15,9 +15,9 @@ export class HealthController {
   @Get()
   async check(
     @Res({ passthrough: true }) response: Response,
-  ): Promise<HealthDto> {
+  ): Promise<HealthResponse> {
     const report = await this.health.check();
-    const payload: HealthDto = {
+    const payload: HealthResponse = {
       ...report,
       uptime: process.uptime(),
     };

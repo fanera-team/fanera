@@ -3,7 +3,9 @@ import react from '@vitejs/plugin-react'
 import { fileURLToPath, URL } from 'node:url'
 import { defineConfig } from 'vite'
 
-// https://vite.dev/config/
+const apiTarget = process.env.VITE_API_URL ?? `http://localhost:${process.env.PORT ?? '3001'}`
+
+// https://vite.dev
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   resolve: {
@@ -13,7 +15,7 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      '/health': 'http://localhost:3001',
+      '/health': apiTarget,
     },
   },
 })

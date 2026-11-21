@@ -12,10 +12,6 @@
       "types": "./dist/schemas/index.d.ts",
       "import": "./dist/schemas/index.js"
     },
-    "./dto": {
-      "types": "./dist/dto/index.d.ts",
-      "import": "./dist/dto/index.js"
-    },
     "./socket-events": {
       "types": "./dist/socket-events/index.d.ts",
       "import": "./dist/socket-events/index.js"

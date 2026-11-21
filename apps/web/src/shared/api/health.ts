@@ -1,7 +1,7 @@
-import { healthSchema, type HealthDto } from '@fanera/contracts'
+import { healthSchema, type HealthResponse } from '@fanera/contracts'
 
-export async function getHealth(): Promise<HealthDto> {
+export async function getHealth(): Promise<HealthResponse> {
   const response = await fetch('/health')
-  const body: unknown = await response.json()
-  return healthSchema.parse(body)
+  const data: unknown = await response.json()
+  return healthSchema.parse(data)
 }

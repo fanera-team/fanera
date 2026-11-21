@@ -1,10 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import type { HealthDto } from '@fanera/contracts';
+import type { DependencyStatus, HealthResponse } from '@fanera/contracts';
 import { PostgresService } from '../infra/postgres/postgres.service.js';
 import { RedisService } from '../infra/redis/redis.service.js';
 
-type DependencyStatus = HealthDto['postgres'];
-type HealthReport = Pick<HealthDto, 'status' | 'postgres' | 'redis'>;
+type HealthReport = Pick<HealthResponse, 'status' | 'postgres' | 'redis'>;
 
 /** Сколько ждать ответа зависимости, прежде чем считать её недоступной. */
 export const HEALTH_CHECK_TIMEOUT_MS = 2000;
