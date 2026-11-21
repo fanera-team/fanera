@@ -1,6 +1,11 @@
-import { PROBLEM_CONTENT_TYPE } from '@fanera/contracts';
-import { applyDecorators } from '@nestjs/common';
+import {
+  PROBLEM_CONTENT_TYPE,
+  PROBLEM_TYPE,
+  type Problem,
+} from '@fanera/contracts';
+import { applyDecorators, HttpStatus } from '@nestjs/common';
 import { ApiResponse, getSchemaPath } from '@nestjs/swagger';
+import { STATUS_CODES } from 'node:http';
 
 /** Имя схемы ошибки в components.schemas (регистрируется в setup-swagger.ts). */
 export const PROBLEM_SCHEMA_NAME = 'Problem';
@@ -41,6 +46,12 @@ export function ApiErrors(...statuses: ApiErrorStatus[]) {
         content: {
           [PROBLEM_CONTENT_TYPE]: {
             schema: { $ref: getSchemaPath(PROBLEM_SCHEMA_NAME) },
+            example: {
+              type: PROBLEM_TYPE,
+              title: STATUS_CODES[status] ?? 'Error',
+              status,
+              code: status === 422 ? 'VALIDATION_ERROR' : HttpStatus[status],
+            } satisfies Problem,
           },
         },
       }),

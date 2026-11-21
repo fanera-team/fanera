@@ -24,8 +24,11 @@ export function setupSwagger(app: INestApplication): void {
         '`docs/system-design/api/rest_api.yml`, эндпоинты переезжают оттуда сюда по мере работы над задачами.',
         'Эндпоинты с ответом **501** — контракт согласован, реализации ещё нет.',
         '',
-        'Авторизация: `Authorization: Bearer <access JWT>` (кнопка Authorize).',
-        'Refresh-токен лежит в httpOnly cookie `rt` с `Path=/api/auth`.',
+        'Регистрация и вход публичные: возвращают access-токен в JSON и устанавливают refresh-cookie.',
+        'Access JWT живёт 15 минут и хранится в памяти фронта. Для REST: `Authorization: Bearer <access JWT>` (кнопка Authorize).',
+        'Refresh-токен лежит в cookie `rt`: HttpOnly, Secure, SameSite=Lax, Path=/api/auth. В JSON он не передаётся.',
+        '`POST /api/auth/refresh` использует cookie, без тела и Bearer. При загрузке страницы и после 401 фронт получает новый access-токен этим запросом.',
+        'До вехи 3 refresh без ротации; с вехи 3 — ротация и обработка параллельного обновления во вкладках (Р-59, Р-60).',
         'Ошибки приходят как RFC 9457 `application/problem+json` (схема `Problem`).',
       ].join('\n'),
     )

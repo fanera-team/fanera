@@ -100,8 +100,8 @@ src/boards/
 | Папка | Что там | Сейчас | Что появится |
 |---|---|---|---|
 | `apps/web` | фронтенд: SPA на React + Vite, TypeScript, Tailwind (Р-65) | каркас из шаблона Vite | каталог, холст, страница доски (T1-10, T2-05, T2-13). Как фронт работает с бэком — [frontend.md](../frontend.md) |
-| `apps/server` | бэкенд: NestJS 12 (ESM, Express, Zod, Vitest) — все три роли из одного кода | одна точка входа `main.ts`, конфиг через Zod, `GET /health`, префикс REST `/api` | три точки входа `main.api.ts` / `main.collab.ts` / `main.worker.ts` (T1-04), Prisma (T1-05), модули фич из списка выше |
-| `packages/contracts` | общие для фронта и бэка zod-схемы и типы: REST, события сокета, модель элемента доски | `@fanera/contracts`: типы Problem Details и схема ошибки поля; подключён к серверу | T1-09 начата: далее схемы auth и подключение потребителей на фронте. Контракты согласуем по [rest_api.yml](../api/rest_api.yml) и [websocket.md](../api/websocket.md) |
+| `apps/server` | бэкенд: NestJS 12 (ESM, Express, Zod, Vitest) — все три роли из одного кода | одна точка входа `main.ts`, конфиг через Zod, `GET /health`, префикс REST `/api`, Swagger на `/api/docs` | три точки входа `main.api.ts` / `main.collab.ts` / `main.worker.ts` (T1-04), Prisma (T1-05), модули фич из списка выше |
+| `packages/contracts` | общие для фронта и бэка Zod-схемы и типы: REST, события сокета, модель элемента доски | схемы REST первого сценария и `Problem Details` в [`@fanera/contracts`](../../../packages/contracts/README.md), пакет подключён к серверу | подключение потребителей на фронте (T1-09) и расширение пакета по [rest_api.yml](../api/rest_api.yml) и [websocket.md](../api/websocket.md) |
 | `packages/i18n` | общие переводы интерфейса (`ru` и `en`) | JSON-файлы по неймспейсам; фронт импортирует через `@fanera/i18n` | новые ключи по мере фич; правила — [i18n.md](../i18n.md) |
 | `docs/system-design` | эта документация | есть | обновляем вместе с решениями ([decisions.md](../decisions.md)) |
 

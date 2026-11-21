@@ -1,7 +1,11 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { AuthModule } from './auth/auth.module.js';
+import { BoardsModule } from './boards/boards.module.js';
 import { envSchema } from './config/env.schema.js';
 import { HealthModule } from './health/health.module.js';
+import { UsersModule } from './users/users.module.js';
+import { WorkspacesModule } from './workspaces/workspaces.module.js';
 
 @Module({
   imports: [
@@ -13,6 +17,10 @@ import { HealthModule } from './health/health.module.js';
       validationSchema: envSchema,
     }),
     HealthModule,
+    AuthModule,
+    UsersModule,
+    WorkspacesModule,
+    BoardsModule,
   ],
 })
 export class AppModule {}

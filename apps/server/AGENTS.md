@@ -8,6 +8,7 @@
 - **Глобальные настройки приложения** (middleware, пайпы, CORS...) добавлять в `src/configure-app.ts`, а не в `main.ts` — его же используют e2e-тесты. Исключение — логгер: JSON в выводе тестов только мешает.
 - **Окружение:** новая переменная → `src/config/env.schema.ts` и `.env.example`. Читать через `ConfigService<Env, true>` и `config.get('NAME', { infer: true })`, не через `process.env`.
 - **Валидация:** только Zod через `@Body({ schema })`, `@Param('id', { schema })`, `@Query({ schema })`; тип DTO — `z.infer`. Не `class-validator`.
+- **Swagger:** описывай успешный ответ через `standardSchema`, ожидаемые ошибки — через `@ApiErrors(...)`, требование access-токена — через `@ApiAccessTokenAuth()`. Сначала согласуем контракт в отдельном PR с фронтом и бэком по Р-47. Пока реализации нет, обработчик возвращает `501`, а фронт может готовить моки по `/api/docs/openapi.json`.
 - **ESM:** `import.meta.dirname` вместо `__dirname` — `tsc` это не ловит, а в рантайме будет `ReferenceError`. Примеры из интернета обычно под CJS/Jest — адаптируй.
 - **DI:** внедряемые через конструктор классы импортировать обычным `import`, не `import type` — иначе пропадут метаданные и DI сломается.
 - **Ошибки:** для ожидаемых ситуаций — исключения Nest (`NotFoundException`...), не `new Error()`: иначе клиент получит 500.

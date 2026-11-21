@@ -3,7 +3,6 @@ import {
   ApiOkResponse,
   ApiOperation,
   ApiServiceUnavailableResponse,
-  ApiTags,
 } from '@nestjs/swagger';
 import type { Response } from 'express';
 import {
@@ -18,7 +17,6 @@ import { HealthService } from './health.service.js';
  * 200 — всё работает, 503 — какая-то зависимость недоступна
  * (по коду ответа решают машины, тело — для человека).
  */
-@ApiTags('health')
 @Controller('health')
 export class HealthController {
   constructor(private readonly health: HealthService) {}
