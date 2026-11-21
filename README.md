@@ -19,13 +19,16 @@ pnpm --filter web dev
 Нужен Docker (Docker Desktop или OrbStack). Из корня репозитория:
 
 ```bash
-docker compose up -d                            # Postgres и Redis в фоне
-docker compose ps                               # дождаться статуса healthy
+docker compose up -d --wait                     # Postgres и Redis в фоне, ждёт healthcheck
 cp apps/server/.env.example apps/server/.env
+pnpm --filter server db:migrate:deploy          # создать таблицы
+pnpm --filter server db:seed                    # тестовые пользователи
 pnpm --filter server dev                        # http://localhost:3001/health
 ```
 
 `/health` отвечает `200` и `"postgres": "up", "redis": "up"`, если всё подключено, и `503`, если что-то недоступно.
+
+Миграции, seed и правила работы с БД — в [apps/server/README.md](apps/server/README.md#база-данных-prisma).
 
 Остановить: `docker compose down`. Удалить вместе с данными: `docker compose down -v`.
 Логин, пароль и порты по умолчанию — в `docker-compose.yml`; поменять их можно через корневой `.env` (см. `.env.example`).
