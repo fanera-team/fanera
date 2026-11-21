@@ -7,8 +7,10 @@
     "dev:web": "pnpm --parallel --filter web --filter @fanera/contracts dev",
     "dev:server": "pnpm --parallel --filter server --filter @fanera/contracts dev",
     "build": "pnpm -r build",
-    "lint": "eslint . --report-unused-disable-directives --max-warnings 0",
-    "lint:fix": "eslint . --fix",
+    "lint": "pnpm lint:eslint && pnpm lint:oxlint",
+    "lint:eslint": "eslint . --report-unused-disable-directives --max-warnings 0",
+    "lint:oxlint": "pnpm --filter server lint",
+    "lint:fix": "eslint . --fix && pnpm --filter server lint:fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "pnpm -r test",
@@ -33,8 +35,11 @@
   },
   "packageManager": "pnpm@12.18.0",
   "lint-staged": {
+    "apps/server/**/*.{ts,tsx}": [
+      "pnpm --filter server exec oxlint --type-aware --fix"
+    ],
     "*.{ts,tsx,js,jsx}": [
-      "eslint --fix",
+      "eslint --fix --no-warn-ignored",
       "prettier --write"
     ],
     "*.{json,md,yaml,yml,css}": [

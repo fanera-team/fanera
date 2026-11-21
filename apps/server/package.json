@@ -12,6 +12,7 @@
     "start:prod": "node dist/main",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "lint": "oxlint --type-aware src/ test/",
+    "lint:fix": "oxlint --type-aware --fix src/ test/",
     "test": "pnpm --filter @fanera/contracts build && vitest run",
     "test:watch": "pnpm --filter @fanera/contracts build && vitest",
     "test:cov": "pnpm --filter @fanera/contracts build && vitest run --coverage",

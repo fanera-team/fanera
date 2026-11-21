@@ -158,15 +158,16 @@ pnpm install       # установка зависимостей
 pnpm dev           # web и server параллельно
 pnpm dev:web       # только фронт (Vite)
 pnpm dev:server    # только бэк, http://localhost:3001/health
-pnpm lint          # ESLint
-pnpm --filter server lint  # oxlint для бэкенда
+pnpm lint          # ESLint по web и пакетам + oxlint по серверу
+pnpm lint:eslint   # только ESLint
+pnpm lint:oxlint   # только oxlint для бэкенда
 pnpm typecheck     # проверка типов во всех приложениях
 pnpm test          # unit-тесты; e2e бэка: pnpm --filter server test:e2e
 pnpm build         # сборка
 pnpm format        # Prettier
 ```
 
-Перед коммитом husky запускает lint-staged (ESLint + Prettier на изменённых файлах).
+Перед коммитом husky запускает lint-staged: ESLint для web и пакетов, oxlint для server, Prettier на изменённых файлах.
 
 ### Процесс
 

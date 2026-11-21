@@ -11,6 +11,7 @@
     "import/no-cycle": "error",
     "eslint/no-console": "error",
     "eslint/eqeqeq": "error",
+    "eslint/no-unused-vars": "error",
 
     "typescript/no-explicit-any": "warn",
     "typescript/no-unsafe-assignment": "warn",
