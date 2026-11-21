@@ -5,5 +5,7 @@ allowBuilds:
   sharp: true
   unrs-resolver: true
   esbuild: true
+  # телеметрия swagger-ui-dist, скрипт не нужен
+  '@scarf/scarf': false
 catalog:
   typescript: ~6.0.3

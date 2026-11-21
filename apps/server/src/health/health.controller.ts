@@ -1,5 +1,15 @@
 import { Controller, Get, HttpStatus, Res } from '@nestjs/common';
+import {
+  ApiOkResponse,
+  ApiOperation,
+  ApiServiceUnavailableResponse,
+} from '@nestjs/swagger';
 import type { Response } from 'express';
+import {
+  healthSchema,
+  healthUnavailableSchema,
+  type HealthResponse,
+} from './dto/health.schemas.js';
 import { HealthService } from './health.service.js';
 
 /**
@@ -12,7 +22,12 @@ export class HealthController {
   constructor(private readonly health: HealthService) {}
 
   @Get()
-  async check(@Res({ passthrough: true }) response: Response) {
+  @ApiOperation({ summary: 'Проверка состояния сервера' })
+  @ApiOkResponse({ standardSchema: healthSchema })
+  @ApiServiceUnavailableResponse({ standardSchema: healthUnavailableSchema })
+  async check(
+    @Res({ passthrough: true }) response: Response,
+  ): Promise<HealthResponse> {
     const report = await this.health.check();
     const body = { ...report, uptime: process.uptime() };
 

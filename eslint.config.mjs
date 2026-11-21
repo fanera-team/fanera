@@ -6,7 +6,10 @@ import { plugin as featureSlicedPlugin } from '@conarti/eslint-plugin-feature-sl
 import { resolve } from 'node:path'
 
 export default tseslint.config(
-  { ignores: ['**/node_modules', '**/dist', '**/storybook-static', '**/*.config.*'] },
+  {
+    // Бэкенд линтует oxlint (`pnpm lint:oxlint`), у него свой набор правил.
+    ignores: ['**/node_modules', '**/dist', '**/storybook-static', '**/*.config.*', 'apps/server/**'],
+  },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {

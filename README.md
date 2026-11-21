@@ -36,5 +36,5 @@ pnpm --filter server dev                        # http://localhost:3001/health
 
 - `apps/web` — фронтенд: React + Vite (TypeScript, Tailwind)
 - `apps/server` — API: NestJS 12 (ESM, Express, Zod, Vitest) — подробности в [apps/server/README.md](apps/server/README.md)
-- `packages/*` — общий код фронта и бэка: `@fanera/contracts` (zod-схемы и типы, пока Problem Details), `@fanera/i18n` (переводы)
+- `packages/*` — общий код фронта и бэка: `@fanera/contracts` (Zod-схемы и типы REST-контрактов), `@fanera/i18n` (переводы)
 - `docs/system-design` — system design проекта: требования, архитектура (C4), API, модель данных, sequence-диаграммы, решения — начать с [docs/system-design/onboarding.md](docs/system-design/onboarding.md)

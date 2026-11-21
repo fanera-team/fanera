@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import helmet from 'helmet';
 import type { Env } from './config/env.schema.js';
 import { HttpProblemFilter } from './common/filters/http-problem.filter.js';
+import { setupSwagger } from './common/openapi/setup-swagger.js';
 import { ProblemValidationPipe } from './common/pipes/problem-validation.pipe.js';
 
 export function configureApp(app: INestApplication): void {
@@ -24,4 +25,7 @@ export function configureApp(app: INestApplication): void {
 
   // Zod-схемы из @Body/@Param/@Query; ошибки валидации → 422 с путями полей.
   app.useGlobalPipes(new ProblemValidationPipe());
+
+  // Контракт API: UI на /api/docs, JSON на /api/docs/openapi.json
+  setupSwagger(app);
 }
