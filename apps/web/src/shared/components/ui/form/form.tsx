@@ -93,10 +93,19 @@ type FormControlChildProps = {
 // задача компонента — подготовить вложенный элемент к работе с формой
 function FormControl({ children }: { children: React.ReactElement<FormControlChildProps> }) {
   const { error, formDescriptionId, formItemId, formMessageId } = useFormField()
+  // сохраняем внешние ссылки на подсказки и добавляем к ним id описания и ошибки формы
+  const describedBy = [
+    children.props['aria-describedby'],
+    formDescriptionId,
+    error ? formMessageId : undefined,
+  ]
+    // отбрасываем undefined
+    .filter(Boolean)
+    .join(' ')
 
   return React.cloneElement(children, {
     id: formItemId,
-    'aria-describedby': error ? `${formDescriptionId} ${formMessageId}` : formDescriptionId,
+    'aria-describedby': describedBy,
     'aria-invalid': error ? true : undefined,
   })
 }
