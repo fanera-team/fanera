@@ -7,6 +7,15 @@ export { BoardZoomControl } from './board-zoom-control/board-zoom-control'
 export type { BoardZoomControlProps } from './board-zoom-control/board-zoom-control'
 export { Button } from './button/button'
 export { Checkbox } from './checkbox/checkbox'
+export {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from './form/form'
 export { Input } from './input/input'
 export { Textarea } from './textarea/textarea'
 export { Label } from './label/label'
