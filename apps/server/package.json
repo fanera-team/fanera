@@ -17,7 +17,12 @@
     "test:watch": "pnpm --filter @fanera/contracts build && vitest",
     "test:cov": "pnpm --filter @fanera/contracts build && vitest run --coverage",
     "test:e2e": "pnpm --filter @fanera/contracts build && vitest run --config ./vitest.config.e2e.ts",
-    "typecheck": "pnpm --filter @fanera/contracts build && tsc --noEmit"
+    "typecheck": "pnpm --filter @fanera/contracts build && tsc --noEmit",
+    "postinstall": "prisma generate",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma generate && prisma migrate dev",
+    "db:migrate:deploy": "prisma generate && prisma migrate deploy",
+    "db:seed": "prisma db seed"
   },
   "dependencies": {
     "@fanera/contracts": "workspace:*",
@@ -26,9 +31,10 @@
     "@nestjs/core": "^12.0.1",
     "@nestjs/platform-express": "^12.0.1",
     "@nestjs/swagger": "^12.1.2",
+    "@prisma/adapter-pg": "7.10.1",
+    "@prisma/client": "7.10.1",
     "helmet": "^8.3.0",
     "ioredis": "^6.0.0",
-    "pg": "^8.23.1",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
     "zod": "^4.6.7"
@@ -39,13 +45,14 @@
     "@nestjs/testing": "^12.0.1",
     "@types/express": "^5.0.0",
     "@types/node": "^24.0.0",
-    "@types/pg": "^8.23.1",
     "@types/supertest": "^7.0.0",
     "@vitest/coverage-v8": "^4.1.12",
     "oxlint": "^1.58.0",
     "oxlint-tsgolint": "^7.0.2001",
     "prettier": "^3.4.2",
+    "prisma": "7.10.1",
     "supertest": "^7.0.0",
+    "tsx": "4.23.15",
     "typescript": "catalog:default",
     "vite": "^8.0.0",
     "vitest": "^4.1.2"

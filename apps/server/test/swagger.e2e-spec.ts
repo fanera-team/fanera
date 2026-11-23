@@ -13,7 +13,7 @@ import { AppModule } from '../src/app.module.js';
 import { ApiErrors } from '../src/common/openapi/api-errors.decorator.js';
 import { IDEMPOTENCY_KEY_HEADER } from '../src/common/openapi/headers.js';
 import { configureApp } from '../src/configure-app.js';
-import { PostgresService } from '../src/infra/postgres/postgres.service.js';
+import { PrismaService } from '../src/infra/prisma/prisma.service.js';
 import { RedisService } from '../src/infra/redis/redis.service.js';
 
 type Operation = {
@@ -47,7 +47,7 @@ type OpenApiDocument = {
 };
 
 // Postgres и Redis не нужны: проверяем только сборку OpenAPI-документа.
-const postgres = { ping: vi.fn<() => Promise<void>>() };
+const prisma = { ping: vi.fn<() => Promise<void>>() };
 const redis = { ping: vi.fn<() => Promise<void>>() };
 
 @Controller('__swagger-test')
@@ -65,15 +65,15 @@ describe('Swagger (e2e)', () => {
   let doc: OpenApiDocument;
 
   beforeAll(async () => {
-    postgres.ping.mockResolvedValue(undefined);
+    prisma.ping.mockResolvedValue(undefined);
     redis.ping.mockResolvedValue(undefined);
 
     const moduleRef = await Test.createTestingModule({
       imports: [AppModule],
       controllers: [SwaggerTestController],
     })
-      .overrideProvider(PostgresService)
-      .useValue(postgres)
+      .overrideProvider(PrismaService)
+      .useValue(prisma)
       .overrideProvider(RedisService)
       .useValue(redis)
       .compile();

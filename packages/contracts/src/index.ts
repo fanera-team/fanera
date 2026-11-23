@@ -51,3 +51,6 @@ export {
   type Workspace,
   type WorkspaceList,
 } from './workspaces.js'
+
+export * from './schemas/index.js'
+export * from './socket-events/index.js'

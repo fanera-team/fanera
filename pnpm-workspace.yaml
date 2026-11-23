@@ -7,5 +7,7 @@ allowBuilds:
   esbuild: true
   # телеметрия swagger-ui-dist, скрипт не нужен
   '@scarf/scarf': false
+  '@prisma/engines': true
+  prisma: true
 catalog:
   typescript: ~6.0.3
