@@ -11,3 +11,4 @@ allowBuilds:
   prisma: true
 catalog:
   typescript: ~6.0.3
+  zod: ^4.6.7
