@@ -12,8 +12,13 @@ cp apps/server/.env.example apps/server/.env
 pnpm --filter server db:migrate:deploy        # таблицы
 pnpm --filter server db:seed                  # тестовые данные
 pnpm dev:server
-# -> http://localhost:3001/health
 ```
+
+После запуска:
+
+- healthcheck — http://localhost:3001/health;
+- Swagger UI — http://localhost:3001/api/docs;
+- OpenAPI JSON — http://localhost:3001/api/docs/openapi.json.
 
 Сервер стартует и без Postgres/Redis (в лог пишет предупреждение), но `/health` тогда отвечает `503` и показывает, что недоступно.
 
@@ -23,10 +28,10 @@ pnpm dev:server
 ## Как устроено
 
 - `src/main.ts` — запуск: порт из конфига, корректное завершение по SIGTERM.
-- `src/configure-app.ts` — всё, что настраивается на уровне приложения: префикс `/api`, helmet, CORS, глобальная валидация. Его же вызывают e2e-тесты, поэтому новые глобальные настройки добавляются сюда, а не в `main.ts`.
+- `src/configure-app.ts` — всё, что настраивается на уровне приложения: префикс `/api`, helmet, CORS, глобальная валидация и Swagger. Его же вызывают e2e-тесты, поэтому новые глобальные настройки добавляются сюда, а не в `main.ts`.
 - `src/config/env.schema.ts` — Zod-схема переменных окружения. Проверяется при старте: с некорректным `.env` сервер не запустится и напишет, что не так.
 - `src/app.module.ts` — корневой модуль, подключает модули фич.
-- `src/common/` — сквозные вещи, не принадлежащие фичам: `filters/` (ошибки HTTP → `Problem`) и `pipes/` (Zod-валидация входных данных).
+- `src/common/` — сквозные вещи, не принадлежащие фичам: `filters/` (ошибки HTTP → `Problem`), `pipes/` (Zod-валидация входных данных) и `openapi/` (общая настройка и декораторы Swagger).
 - `src/infra/` — подключения к внешним сервисам: `prisma/` (`PrismaService`, Postgres через Prisma), `redis/` (`ioredis`), `logger.ts` (JSON при `NODE_ENV=production`, текст локально; секреты маскируются).
 - `prisma/` — схема БД (`schema.prisma`), миграции и seed. `prisma7.config.ts` — настройки Prisma CLI.
 - `src/generated/prisma/` — сгенерированный клиент Prisma, в git не хранится.

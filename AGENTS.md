@@ -101,13 +101,13 @@ Fanera — командный проект курса Ulbi TV (3 поток). Ц
 
 #### Бэкенд (`apps/server`)
 
-- Сейчас есть: NestJS 12 (ESM, Express), Zod для валидации и конфига, Vitest, oxlint, Prisma 7 + Postgres (схема `core`), Redis (`ioredis`).
-- В плане: схема `collab`, BullMQ, socket.io + Yjs, Swagger, S3 (MinIO).
+- Сейчас есть: NestJS 12 (ESM, Express), Zod для валидации и конфига, Swagger, Vitest, oxlint, Prisma 7 + Postgres (схема `core`), Redis (`ioredis`).
+- В плане: схема `collab`, BullMQ, socket.io + Yjs, S3 (MinIO).
 
 #### Общее (`packages/*`)
 
 - Сейчас есть:
-  - `packages/contracts` — единственный источник общих Zod-схем и типов для фронтенда и бэкенда; приложения не дублируют контрактные типы. Контракты не зависят от React или NestJS.
+  - [`packages/contracts`](packages/contracts/README.md) — единственный источник общих Zod-схем и типов для фронтенда и бэкенда: health, ошибки, авторизация, профиль, воркспейсы и доски. Пакет подключён к обоим приложениям; приложения не дублируют контрактные типы. Контракты не зависят от React или NestJS.
   - `packages/i18n` — переводы интерфейса (`ru` и `en`); фронт импортирует их через `@fanera/i18n`.
 - Изменения общих пакетов потенциально ломают и фронт, и бэк: обсуждай это явно.
 
@@ -137,6 +137,7 @@ Fanera — командный проект курса Ulbi TV (3 поток). Ц
 
 - новая фича — отдельный модуль; в контроллерах и гейтвеях нет бизнес-логики, она в сервисах;
 - валидация только через Zod, не `class-validator`;
+- каждый эндпоинт описываем в Swagger: запрос, успешные ответы и ожидаемые ошибки. Теги генерируются из имён контроллеров. Изменение контракта выносим в отдельный PR и сообщаем фронтенду;
 - схема БД меняется только через миграции Prisma; к БД обращаемся только из сервисов и репозиториев, не из контроллеров ([ADR 0001](docs/adr/0001-orm.md));
 - тяжёлые операции (ИИ, файлы, компакция) — в фоне через BullMQ, не в обработчике запроса;
 - обработчики событий идемпотентны.
@@ -161,15 +162,16 @@ pnpm install       # установка зависимостей
 pnpm dev           # web и server параллельно
 pnpm dev:web       # только фронт (Vite)
 pnpm dev:server    # только бэк, http://localhost:3001/health
-pnpm lint          # ESLint
-pnpm --filter server lint  # oxlint для бэкенда
+pnpm lint          # ESLint по web и пакетам + oxlint по серверу
+pnpm lint:eslint   # только ESLint
+pnpm lint:oxlint   # только oxlint для бэкенда
 pnpm typecheck     # проверка типов во всех приложениях
 pnpm test          # unit-тесты; e2e бэка: pnpm --filter server test:e2e
 pnpm build         # сборка
 pnpm format        # Prettier
 ```
 
-Перед коммитом husky запускает lint-staged (ESLint + Prettier на изменённых файлах).
+Перед коммитом husky запускает lint-staged: ESLint для web и пакетов, oxlint для server, Prettier на изменённых файлах.
 
 ### Процесс
 

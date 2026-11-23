@@ -1,5 +1,14 @@
+import {
+  healthOkSchema,
+  healthUnavailableSchema,
+  type HealthResponse,
+} from '@fanera/contracts';
 import { Controller, Get, HttpStatus, Res } from '@nestjs/common';
-import { healthSchema, type HealthResponse } from '@fanera/contracts';
+import {
+  ApiOkResponse,
+  ApiOperation,
+  ApiServiceUnavailableResponse,
+} from '@nestjs/swagger';
 import type { Response } from 'express';
 import { HealthService } from './health.service.js';
 
@@ -13,6 +22,9 @@ export class HealthController {
   constructor(private readonly health: HealthService) {}
 
   @Get()
+  @ApiOperation({ summary: 'Проверка состояния сервера' })
+  @ApiOkResponse({ standardSchema: healthOkSchema })
+  @ApiServiceUnavailableResponse({ standardSchema: healthUnavailableSchema })
   async check(
     @Res({ passthrough: true }) response: Response,
   ): Promise<HealthResponse> {
@@ -21,13 +33,11 @@ export class HealthController {
       ...report,
       uptime: process.uptime(),
     };
-    const body = healthSchema.parse(payload);
-
     if (report.status !== 'ok') {
       // Это диагностический отчёт, а не ошибка REST: сохраняем его тело при 503.
       response.status(HttpStatus.SERVICE_UNAVAILABLE);
     }
 
-    return body;
+    return payload;
   }
 }
