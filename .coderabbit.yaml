@@ -67,7 +67,7 @@ reviews:
       instructions: |
         Проверяй, что тест проверяет поведение, а не реализацию, и покрывает краевые случаи.
 
-    - path: "docs/system-design/**"
+    - path: 'docs/system-design/**'
       instructions: |
         Документация системного дизайна. Стиль текста не комментируй. Проверяй:
         - согласованность: если меняется факт (путь, лимит, роль, шаг алгоритма), найди другие
@@ -87,7 +87,7 @@ reviews:
         docs/system-design/scripts/check.mjs — их не дублируй.
         Правило «PR больше ~400 строк» к чистой документации не применяй.
 
-    - path: ".github/workflows/**"
+    - path: '.github/workflows/**'
       instructions: |
         CI/CD: секреты только через GitHub Secrets, у джобов минимальные permissions.
 

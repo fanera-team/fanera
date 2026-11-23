@@ -1,15 +1,15 @@
+import {
+  healthOkSchema,
+  healthUnavailableSchema,
+  type HealthResponse,
+} from '@fanera/contracts';
 import { Controller, Get, HttpStatus, Res } from '@nestjs/common';
 import {
   ApiOkResponse,
   ApiOperation,
   ApiServiceUnavailableResponse,
 } from '@nestjs/swagger';
-import { healthSchema, type HealthResponse } from '@fanera/contracts';
 import type { Response } from 'express';
-import {
-  healthOkSchema,
-  healthUnavailableSchema,
-} from './dto/health.schemas.js';
 import { HealthService } from './health.service.js';
 
 /**
@@ -33,13 +33,11 @@ export class HealthController {
       ...report,
       uptime: process.uptime(),
     };
-    const body = healthSchema.parse(payload);
-
     if (report.status !== 'ok') {
       // Это диагностический отчёт, а не ошибка REST: сохраняем его тело при 503.
       response.status(HttpStatus.SERVICE_UNAVAILABLE);
     }
 
-    return body;
+    return payload;
   }
 }
