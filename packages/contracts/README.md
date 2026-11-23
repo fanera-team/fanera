@@ -1,14 +1,19 @@
 # @fanera/contracts
 
-Общие схемы и типы REST для фронтенда и бэкенда. Первый контракт — ошибки
-Problem Details из [OpenAPI](../../docs/system-design/api/rest_api.yml).
+Общие схемы и типы для фронтенда и бэкенда. Контракты живут только здесь:
+приложения импортируют их и не дублируют типы.
 
-Публичный API находится в `src/index.ts`: `problemSchema`, `fieldErrorSchema`,
-`PROBLEM_TYPE`, `PROBLEM_CONTENT_TYPE` и выведенные из схем типы `Problem`,
-`FieldError`. Импортируем через `@fanera/contracts`. Типы не дублируют схемы:
-они получаются через `z.infer`, поэтому меняем контракт только в схеме.
-Сервер уже использует пакет; фронтенд подключит его через `workspace:*`,
-когда появится обработка ошибок API. Это начало T1-09, схемы auth ещё не добавлены.
+Публичные разделы: `schemas` и `socket-events` (также доступны как
+подпути `@fanera/contracts/schemas` и `@fanera/contracts/socket-events`).
+Корневой API экспортирует health-схему (`healthSchema`, `healthStatusSchema`,
+`dependencyStatusSchema`), типы (`HealthResponse`, `HealthStatus`, `DependencyStatus`)
+и Problem Details: `problemSchema`, `fieldErrorSchema`,
+`PROBLEM_TYPE`, `PROBLEM_CONTENT_TYPE`, `Problem` и `FieldError`. Формат
+Problem Details сохранён. Схемы и выведенные из них через `z.infer` типы определяются
+в одном файле без разделения. Для запросов и ответов используются суффиксы
+`*Request` / `*Response`, для сущностей — существительные.
+Ответ health endpoint валидируется общей схемой. `socket-events` — задел для
+типизированных событий и модели элемента доски (#4). Пакет не зависит от React или NestJS.
 
 В пакете нет NestJS, React и доступа к окружению. `envSchema` остаётся на сервере,
 как и фильтр ошибок с пайпом валидации.
@@ -26,7 +31,8 @@ Problem Details из [OpenAPI](../../docs/system-design/api/rest_api.yml).
 Корневой `pnpm dev`, `pnpm dev:web` и `pnpm dev:server` включают наблюдение за
 контрактами. После пересборки `dist` сервер нужно перезапустить: `nest start --watch`
 не следит за `node_modules`. Тесты и приложения читают собранный `dist`, поэтому
-после правки контракта перед `pnpm test` нужен `pnpm --filter @fanera/contracts build`
+после правки контракта перед typecheck, тестами и сборкой приложений нужен
+`pnpm --filter @fanera/contracts build`
 (в CI это делает `prepare` при установке). Корневой `pnpm build` собирает зависимости
 перед приложениями.
 

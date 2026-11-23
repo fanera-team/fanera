@@ -5,16 +5,17 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "pnpm --filter @fanera/contracts build && tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "typecheck": "tsc -b",
+    "typecheck": "pnpm --filter @fanera/contracts build && tsc -b",
     "test": "vitest run",
     "test:e2e": "playwright test",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build"
   },
   "dependencies": {
+    "@fanera/contracts": "workspace:*",
     "@base-ui/react": "^1.9.0",
     "@fanera/i18n": "workspace:*",
     "@fontsource-variable/inter": "^5.3.0",

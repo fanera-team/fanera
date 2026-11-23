@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react'
 import { fileURLToPath, URL } from 'node:url'
 import { defineConfig } from 'vite'
 
-// https://vite.dev/config/
+// https://vite.dev
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   resolve: {

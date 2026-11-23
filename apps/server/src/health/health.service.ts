@@ -1,14 +1,9 @@
 import { Injectable } from '@nestjs/common';
+import type { DependencyStatus, HealthResponse } from '@fanera/contracts';
 import { PrismaService } from '../infra/prisma/prisma.service.js';
 import { RedisService } from '../infra/redis/redis.service.js';
 
-export type DependencyStatus = 'up' | 'down';
-
-export interface HealthReport {
-  status: 'ok' | 'error';
-  postgres: DependencyStatus;
-  redis: DependencyStatus;
-}
+type HealthReport = Pick<HealthResponse, 'status' | 'postgres' | 'redis'>;
 
 /** Сколько ждать ответа зависимости, прежде чем считать её недоступной. */
 export const HEALTH_CHECK_TIMEOUT_MS = 2000;
