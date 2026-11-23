@@ -1,5 +1,4 @@
-import { screenToWorld } from '../lib/coordinates'
-import type { Camera } from '../model/canvas-store'
+import { screenToWorld, type Camera } from '@/entities/canvas'
 import type { Vector2d } from 'konva/lib/types'
 
 export function zoomCameraTo(camera: Camera, pointer: Vector2d, newScale: number): Camera {

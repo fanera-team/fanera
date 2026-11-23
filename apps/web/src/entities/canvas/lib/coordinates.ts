@@ -10,7 +10,7 @@ export function screenToWorld(camera: Camera, screenX: number, screenY: number):
 
 export function worldToScreen(camera: Camera, worldX: number, worldY: number): Vector2d {
   return {
-    x: camera.x - worldX * camera.scale,
-    y: camera.y - worldY * camera.scale,
+    x: camera.x + worldX * camera.scale,
+    y: camera.y + worldY * camera.scale,
   }
 }

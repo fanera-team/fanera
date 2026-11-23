@@ -1,11 +1,12 @@
 import { Circle, Rect } from 'react-konva'
 import type { ShapeElement } from '../model/elementTypes'
+import { memo } from 'react'
 
 interface ShapeElementRendererProps {
   shapeElement: ShapeElement
 }
 
-export function ShapeElementRenderer({ shapeElement }: ShapeElementRendererProps) {
+export const ShapeElementRenderer = memo(({ shapeElement }: ShapeElementRendererProps) => {
   switch (shapeElement.shapeType) {
     case 'rectangle':
       return (
@@ -17,6 +18,7 @@ export function ShapeElementRenderer({ shapeElement }: ShapeElementRendererProps
           fill={shapeElement.fill}
           stroke={shapeElement.stroke}
           rotation={shapeElement.rotation}
+          listening={false}
         />
       )
     case 'circle':
@@ -34,4 +36,4 @@ export function ShapeElementRenderer({ shapeElement }: ShapeElementRendererProps
       shapeElement satisfies never
       return null
   }
-}
+})

@@ -1,11 +1,12 @@
 import { ShapeElementRenderer } from './ShapeElementRenderer'
 import type { Element } from '../model/elementTypes'
+import { memo } from 'react'
 
 interface ElementRendererProps {
   element: Element
 }
 
-export function ElementRenderer({ element }: ElementRendererProps) {
+export const ElementRenderer = memo(({ element }: ElementRendererProps) => {
   switch (element.type) {
     case 'shape':
       return <ShapeElementRenderer shapeElement={element} />
@@ -14,4 +15,4 @@ export function ElementRenderer({ element }: ElementRendererProps) {
       return null
     }
   }
-}
+})
