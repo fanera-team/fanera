@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from './client'
-import { clearAccessToken, setAccessToken } from './access-token'
+import { clearAccessToken, getAccessToken, setAccessToken } from './access-token'
+import { subscribeToSessionExpiry } from './auth'
 import { mockAuthResponse } from './test-fixtures'
 
 beforeEach(() => {
@@ -40,5 +41,64 @@ describe('apiRequest', () => {
     expect(fetchMock.mock.calls.filter(([url]) => url === '/api/auth/refresh')).toHaveLength(1)
     expect(fetchMock).toHaveBeenCalledTimes(5)
     expect(localStorage.length + sessionStorage.length).toBe(0)
+  })
+
+  it('does not clear a newer token when a retry gets a late 401', async () => {
+    setAccessToken('old')
+    let resolveFirstRefresh!: (response: Response) => void
+    let resolveSecondRefresh!: (response: Response) => void
+    let resolveLate401!: (response: Response) => void
+    const firstRefresh = new Promise<Response>((resolve) => {
+      resolveFirstRefresh = resolve
+    })
+    const secondRefresh = new Promise<Response>((resolve) => {
+      resolveSecondRefresh = resolve
+    })
+    const late401 = new Promise<Response>((resolve) => {
+      resolveLate401 = resolve
+    })
+    let refreshCount = 0
+    const fetchMock = vi.fn(async (url: RequestInfo | URL, init?: RequestInit) => {
+      if (String(url) === '/api/auth/refresh') {
+        refreshCount += 1
+        return refreshCount === 1 ? firstRefresh : secondRefresh
+      }
+      const token = new Headers(init?.headers).get('Authorization')
+      if (String(url) === '/api/resource' && token === 'Bearer old')
+        return new Response('', { status: 401 })
+      if (String(url) === '/api/resource' && token === 'Bearer new') return late401
+      if (String(url) === '/api/other' && token === 'Bearer new')
+        return new Response('', { status: 401 })
+      return new Response('{}', { status: 200 })
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    const onExpired = vi.fn()
+    const unsubscribe = subscribeToSessionExpiry(onExpired)
+
+    const resourceRequest = apiRequest('/resource')
+    await vi.waitFor(() => expect(refreshCount).toBe(1))
+    resolveFirstRefresh(
+      new Response(JSON.stringify({ ...mockAuthResponse, accessToken: 'new' }), { status: 200 }),
+    )
+    await vi.waitFor(() =>
+      expect(
+        fetchMock.mock.calls.some(
+          ([url]) => url === '/api/resource' && fetchMock.mock.calls.length >= 3,
+        ),
+      ).toBe(true),
+    )
+
+    const otherRequest = apiRequest('/other')
+    await vi.waitFor(() => expect(refreshCount).toBe(2))
+    resolveSecondRefresh(
+      new Response(JSON.stringify({ ...mockAuthResponse, accessToken: 'newer' }), { status: 200 }),
+    )
+    await expect(otherRequest).resolves.toBeInstanceOf(Response)
+    resolveLate401(new Response('', { status: 401 }))
+
+    await expect(resourceRequest).rejects.toMatchObject({ status: 401 })
+    expect(getAccessToken()).toBe('newer')
+    expect(onExpired).not.toHaveBeenCalled()
+    unsubscribe()
   })
 })

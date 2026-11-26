@@ -1,6 +1,6 @@
 import { problemSchema, type Problem } from '@fanera/contracts'
-import { clearAccessToken, getAccessToken } from './access-token'
-import { notifySessionExpired, refreshSession } from './auth'
+import { getAccessToken } from './access-token'
+import { getRefreshInFlight, notifySessionExpired, refreshSession } from './auth'
 
 export class ApiError extends Error {
   readonly status: number
@@ -28,6 +28,12 @@ async function throwApiError(response: Response): Promise<never> {
   throw new ApiError(response.status, problem)
 }
 
+async function notifyIfTokenIsStillExpired(sentToken: string | null) {
+  const activeRefresh = getRefreshInFlight()
+  if (activeRefresh) await activeRefresh.catch(() => null)
+  if (sentToken && !getRefreshInFlight() && getAccessToken() === sentToken) notifySessionExpired()
+}
+
 export async function apiRequest(path: string, init: RequestInit = {}) {
   const sentToken = getAccessToken()
   const response = await requestOnce(path, init, sentToken)
@@ -36,24 +42,21 @@ export async function apiRequest(path: string, init: RequestInit = {}) {
     return response
   }
 
-  const currentToken = getAccessToken()
-  if (currentToken && currentToken !== sentToken) {
-    const retried = await requestOnce(path, init, currentToken)
-    if (retried.status === 401) {
-      notifySessionExpired()
-      return throwApiError(retried)
-    }
-    if (!retried.ok) return throwApiError(retried)
-    return retried
-  }
+  const activeRefresh = getRefreshInFlight()
+  if (activeRefresh) await activeRefresh
 
-  const refreshed = await refreshSession()
-  if (!refreshed) {
-    clearAccessToken()
+  let retryToken = getAccessToken()
+  if (retryToken === sentToken) {
+    const refreshed = await refreshSession()
+    retryToken = refreshed?.accessToken ?? getAccessToken()
+  }
+  if (!retryToken || retryToken === sentToken) {
+    await notifyIfTokenIsStillExpired(sentToken)
     return throwApiError(response)
   }
-  const retried = await requestOnce(path, init, refreshed.accessToken)
-  if (retried.status === 401) notifySessionExpired()
+
+  const retried = await requestOnce(path, init, retryToken)
+  if (retried.status === 401) await notifyIfTokenIsStillExpired(retryToken)
   if (!retried.ok) return throwApiError(retried)
   return retried
 }

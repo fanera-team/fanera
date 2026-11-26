@@ -4,6 +4,10 @@ import { clearAccessToken, setAccessToken } from './access-token'
 let refreshInFlight: Promise<AuthResponse | null> | null = null
 const listeners = new Set<() => void>()
 
+export function getRefreshInFlight() {
+  return refreshInFlight
+}
+
 export function subscribeToSessionExpiry(listener: () => void) {
   listeners.add(listener)
   return () => listeners.delete(listener)

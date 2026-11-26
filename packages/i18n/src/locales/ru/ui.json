@@ -6,6 +6,10 @@
   },
   "auth": {
     "loading": "Загрузка…",
+    "sessionCheckFailed": "Не удалось проверить сессию.",
+    "retry": "Повторить",
+    "sessionCheckFailed": "Не удалось проверить сессию.",
+    "retry": "Повторить",
     "loginPlaceholder": "Вход – форма появится в следующем PR",
     "registerPlaceholder": "Регистрация – форма появится в следующем PR",
     "boardsPlaceholder": "Доски"
