@@ -1,18 +1,56 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { afterEach, describe, expect, it, vi } from 'vitest'
-import '@/shared/lib/i18n'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { i18n } from '@/shared/lib/i18n'
 import App from './App'
 
-afterEach(() => vi.unstubAllGlobals())
+// Мокаем useAuthQuery, чтобы AuthGuard всегда считал пользователя авторизованным
+vi.mock('@/features/auth/model/auth-query', () => ({
+  authQueryKey: ['auth'],
+  useAuthQuery: () => ({
+    data: { id: 'u1' },
+    isPending: false,
+    isLoading: false,
+  }),
+}))
+
+function renderApp() {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: false,
+      },
+    },
+  })
+
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <App />
+    </QueryClientProvider>,
+  )
+}
+
+beforeEach(async () => {
+  window.history.replaceState({}, '', '/boards')
+  await i18n.changeLanguage('en')
+})
+
+afterEach(() => {
+  vi.unstubAllGlobals()
+})
 
 describe('App layout', () => {
   it('сдвигает содержимое при закреплении и накладывает откреплённую панель', async () => {
-    vi.stubGlobal('matchMedia', () => ({ matches: true }))
+    vi.stubGlobal('matchMedia', () => ({
+      matches: true,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    }))
     const user = userEvent.setup()
-    render(<App />)
+    renderApp()
 
-    const sidebar = screen.getByRole('complementary')
+    const sidebar = await screen.findByRole('complementary')
     expect(sidebar).toHaveAttribute('data-pinned', 'true')
     expect(screen.getByRole('main')).toBeInTheDocument()
 
@@ -30,12 +68,16 @@ describe('App layout', () => {
   })
 
   it('открывает панель поверх содержимого на узком экране и закрывает её по подложке', async () => {
-    vi.stubGlobal('matchMedia', () => ({ matches: false }))
+    vi.stubGlobal('matchMedia', () => ({
+      matches: false,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    }))
     const user = userEvent.setup()
-    render(<App />)
+    renderApp()
 
     expect(screen.queryByRole('complementary')).not.toBeInTheDocument()
-    await user.click(screen.getByRole('button', { name: 'Open sidebar' }))
+    await user.click(await screen.findByRole('button', { name: 'Open sidebar' }))
     expect(screen.getByRole('complementary')).toHaveAttribute('data-pinned', 'false')
 
     await user.click(screen.getAllByRole('button', { name: 'Close sidebar' })[0])

@@ -4,6 +4,12 @@
     "increment": "Increase",
     "decrement": "Decrease"
   },
+  "auth": {
+    "loading": "Loading…",
+    "loginPlaceholder": "Sign in – the form will be added in the next PR",
+    "registerPlaceholder": "Sign up – the form will be added in the next PR",
+    "boardsPlaceholder": "Boards"
+  },
   "language": {
     "label": "Language",
     "ru": "Русский",
@@ -103,7 +109,9 @@
     "deleteBoardDescription": "The board and all its elements will be permanently deleted.",
     "deleteBoardSuccess": "Board deleted"
   },
-  "dialog": { "close": "Close" },
+  "dialog": {
+    "close": "Close"
+  },
   "toast": {
     "containerAriaLabel": "Notifications",
     "close": "Close notification",

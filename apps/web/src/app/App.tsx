@@ -1,22 +1,16 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { RouterProvider } from 'react-router'
 import { Toaster, TooltipProvider } from '@/shared/components/ui'
 import { Header } from '@/widgets/header'
 import { Sidebar } from '@/widgets/sidebar'
-import { UiPlayground } from '@/widgets/ui-playground'
-
-function isDesktopWidth() {
-  return (
-    typeof window !== 'undefined' &&
-    typeof window.matchMedia === 'function' &&
-    window.matchMedia('(min-width: 1024px)').matches
-  )
-}
+import { router } from './router'
 
 function App() {
   const { t } = useTranslation('ui')
-  const [sidebarOpen, setSidebarOpen] = useState(isDesktopWidth)
-  const [sidebarPinned, setSidebarPinned] = useState(isDesktopWidth)
+  const desktop = typeof window !== 'undefined' && window.matchMedia('(min-width: 1024px)').matches
+  const [sidebarOpen, setSidebarOpen] = useState(desktop)
+  const [sidebarPinned, setSidebarPinned] = useState(desktop)
   const sidebarOverlay = sidebarOpen && !sidebarPinned
 
   return (
@@ -44,7 +38,7 @@ function App() {
             user={{ name: 'Demo User', email: 'demo@example.com' }}
           />
           <main className="min-w-0 flex-1">
-            <UiPlayground />
+            <RouterProvider router={router} />
           </main>
         </div>
       </div>
