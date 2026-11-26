@@ -8,8 +8,6 @@
     "loading": "Loading…",
     "sessionCheckFailed": "Could not check your session.",
     "retry": "Retry",
-    "sessionCheckFailed": "Could not check your session.",
-    "retry": "Retry",
     "loginPlaceholder": "Sign in – the form will be added in the next PR",
     "registerPlaceholder": "Sign up – the form will be added in the next PR",
     "boardsPlaceholder": "Boards"

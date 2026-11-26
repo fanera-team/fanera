@@ -46,7 +46,7 @@ export async function apiRequest(path: string, init: RequestInit = {}) {
   if (activeRefresh) await activeRefresh
 
   let retryToken = getAccessToken()
-  if (retryToken === sentToken) {
+  if (!activeRefresh && retryToken === sentToken) {
     const refreshed = await refreshSession()
     retryToken = refreshed?.accessToken ?? getAccessToken()
   }

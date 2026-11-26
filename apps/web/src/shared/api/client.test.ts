@@ -101,4 +101,23 @@ describe('apiRequest', () => {
     expect(onExpired).not.toHaveBeenCalled()
     unsubscribe()
   })
+
+  it('does not trigger a second refresh when parallel unauthenticated requests fail refresh', async () => {
+    let refreshCalls = 0
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url =
+          typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
+        if (url.endsWith('/auth/refresh')) {
+          refreshCalls += 1
+          return new Response('', { status: 401 })
+        }
+        return new Response('', { status: 401 })
+      }),
+    )
+
+    await expect(Promise.all([apiRequest('/boards'), apiRequest('/boards')])).rejects.toThrow()
+    expect(refreshCalls).toBe(1)
+  })
 })
