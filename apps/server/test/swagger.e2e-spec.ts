@@ -9,7 +9,7 @@ import { ApiHeader } from '@nestjs/swagger';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import type { App } from 'supertest/types.js';
-import { AppModule } from '../src/app.module.js';
+import { ApiModule } from '../src/app/api.module.js';
 import { ApiErrors } from '../src/common/openapi/api-errors.decorator.js';
 import { IDEMPOTENCY_KEY_HEADER } from '../src/common/openapi/headers.js';
 import { configureApp } from '../src/configure-app.js';
@@ -69,7 +69,7 @@ describe('Swagger (e2e)', () => {
     redis.ping.mockResolvedValue(undefined);
 
     const moduleRef = await Test.createTestingModule({
-      imports: [AppModule],
+      imports: [ApiModule],
       controllers: [SwaggerTestController],
     })
       .overrideProvider(PrismaService)

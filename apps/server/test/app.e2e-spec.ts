@@ -3,7 +3,7 @@ import type { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import type { App } from 'supertest/types.js';
-import { AppModule } from '../src/app.module.js';
+import { ApiModule } from '../src/app/api.module.js';
 import { configureApp } from '../src/configure-app.js';
 import { PrismaService } from '../src/infra/prisma/prisma.service.js';
 import { RedisService } from '../src/infra/redis/redis.service.js';
@@ -21,7 +21,7 @@ describe('App (e2e)', () => {
     redis.ping.mockResolvedValue(undefined);
 
     const moduleRef = await Test.createTestingModule({
-      imports: [AppModule],
+      imports: [ApiModule],
     })
       .overrideProvider(PrismaService)
       .useValue(prisma)
@@ -60,6 +60,14 @@ describe('App (e2e)', () => {
       postgres: 'up',
       redis: 'down',
     });
+  });
+
+  it('GET /metrics -> 200: эндпоинт живёт вне /api', async () => {
+    const res = await request(app.getHttpServer()).get('/metrics').expect(200);
+
+    expect(res.headers['content-type']).toContain('text/plain');
+    // Пока это заглушка: тело — комментарий, серий ещё нет
+    expect(res.text).toContain('metrics are not collected yet');
   });
 
   it('CORS: разрешает origin фронта', async () => {
