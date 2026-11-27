@@ -3,7 +3,7 @@ import { Test } from '@nestjs/testing';
 import { randomUUID } from 'node:crypto';
 import request from 'supertest';
 import type { App } from 'supertest/types.js';
-import { AppModule } from '../src/app.module.js';
+import { ApiModule } from '../src/app/api.module.js';
 import { configureApp } from '../src/configure-app.js';
 import { Prisma } from '../src/generated/prisma/client.js';
 import { PrismaService } from '../src/infra/prisma/prisma.service.js';
@@ -22,7 +22,7 @@ describe('Database (e2e)', () => {
     redis.ping.mockResolvedValue(undefined);
 
     const moduleRef = await Test.createTestingModule({
-      imports: [AppModule],
+      imports: [ApiModule],
     })
       .overrideProvider(RedisService)
       .useValue(redis)

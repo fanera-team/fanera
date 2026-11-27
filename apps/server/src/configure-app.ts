@@ -9,7 +9,8 @@ import { ProblemValidationPipe } from './common/pipes/problem-validation.pipe.js
 export function configureApp(app: INestApplication): void {
   const config = app.get<ConfigService<Env, true>>(ConfigService);
 
-  app.setGlobalPrefix('api', { exclude: ['health'] });
+  // health и metrics живут вне /api: их дёргают docker healthcheck и Prometheus
+  app.setGlobalPrefix('api', { exclude: ['health', 'metrics'] });
 
   // Безопасные HTTP-заголовки
   app.use(helmet());
