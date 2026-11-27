@@ -1,5 +1,6 @@
 export * from './auth.js'
 export * from './boards.js'
+export * from './elements.js'
 export * from './health.js'
 export * from './identifiers.js'
 export * from './pagination.js'
