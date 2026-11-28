@@ -4,6 +4,14 @@
     "increment": "Увеличить",
     "decrement": "Уменьшить"
   },
+  "auth": {
+    "loading": "Загрузка…",
+    "sessionCheckFailed": "Не удалось проверить сессию.",
+    "retry": "Повторить",
+    "loginPlaceholder": "Вход – форма появится в следующем PR",
+    "registerPlaceholder": "Регистрация – форма появится в следующем PR",
+    "boardsPlaceholder": "Доски"
+  },
   "language": {
     "label": "Язык",
     "ru": "Русский",
@@ -103,7 +111,9 @@
     "deleteBoardDescription": "Доска и все её элементы будут удалены безвозвратно.",
     "deleteBoardSuccess": "Доска удалена"
   },
-  "dialog": { "close": "Закрыть" },
+  "dialog": {
+    "close": "Закрыть"
+  },
   "toast": {
     "containerAriaLabel": "Уведомления",
     "close": "Закрыть уведомление",

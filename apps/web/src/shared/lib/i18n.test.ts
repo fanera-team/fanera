@@ -1,7 +1,8 @@
+// src/shared/lib/i18n.test.ts
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
+import { createI18n } from './i18n'
 
 beforeEach(() => {
-  vi.resetModules()
   localStorage.clear()
   document.documentElement.lang = 'ru'
 })
@@ -15,7 +16,7 @@ test('prefers the saved language over the browser language on startup', async ()
   vi.spyOn(navigator, 'language', 'get').mockReturnValue('ru-RU')
   localStorage.setItem('fanera.locale', 'en')
 
-  const { i18n } = await import('./i18n')
+  const i18n = await createI18n()
 
   expect(i18n.t('language.label', { ns: 'ui' })).toBe('Language')
   expect(document.documentElement.lang).toBe('en')
@@ -24,7 +25,7 @@ test('prefers the saved language over the browser language on startup', async ()
 test('uses the browser language when no preference is saved', async () => {
   vi.spyOn(navigator, 'language', 'get').mockReturnValue('en-US')
 
-  const { i18n } = await import('./i18n')
+  const i18n = await createI18n()
 
   expect(i18n.t('language.label', { ns: 'ui' })).toBe('Language')
   expect(document.documentElement.lang).toBe('en')
@@ -36,7 +37,7 @@ test('uses the browser language when reading storage fails', async () => {
     throw new Error('Storage unavailable')
   })
 
-  const { i18n } = await import('./i18n')
+  const i18n = await createI18n()
 
   expect(i18n.t('language.label', { ns: 'ui' })).toBe('Language')
   expect(document.documentElement.lang).toBe('en')
@@ -48,7 +49,7 @@ test('still switches language when writing storage fails', async () => {
     throw new Error('Storage unavailable')
   })
 
-  const { i18n } = await import('./i18n')
+  const i18n = await createI18n()
   await i18n.changeLanguage('en')
 
   expect(i18n.t('language.label', { ns: 'ui' })).toBe('Language')
@@ -57,7 +58,7 @@ test('still switches language when writing storage fails', async () => {
 
 test('switches text, document language, and saved preference', async () => {
   vi.spyOn(navigator, 'language', 'get').mockReturnValue('ru-RU')
-  const { i18n } = await import('./i18n')
+  const i18n = await createI18n()
 
   expect(i18n.t('language.label', { ns: 'ui' })).toBe('Язык')
   await i18n.changeLanguage('en')
